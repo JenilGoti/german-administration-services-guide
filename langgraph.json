@@ -1,0 +1,9 @@
+{
+    "source": {
+        "kind": "uv",
+        "root": "."
+    },
+    "graphs": {
+        "chat": "./brain/agents/app.py:chat_graph"
+    }
+}
