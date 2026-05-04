@@ -103,10 +103,13 @@ def flush_services(
 def main():
 
     data = load_json("scrapping/service_bw_output.json")
+    # data = load_json("scrapping/failed_to_scrape.json")
+    # services = data['errors']
     services = extract_unique_services(data)
     services = filter_services(
         services,
         start_from="",
+        limit=0
     )
 
     print(f"Services selected: {len(services)}")

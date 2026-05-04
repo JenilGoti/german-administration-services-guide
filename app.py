@@ -13,5 +13,8 @@
 # print(memory.vector_cypher_search("What is football?", "Message", top_k=10))
 # from scrapping.flush_all_situations_mapping import main
 # main()
-from scrapping.flush_services_from_listing import main
+# from scrapping.flush_services_from_listing import main
+# main()
+from scrapping.flush_sub_situations_from_listing import main
 main()
+

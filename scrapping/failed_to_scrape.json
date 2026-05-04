@@ -1,0 +1,477 @@
+{
+    "total": 790,
+    "success": 696,
+    "failed": 94,
+    "errors": [
+        {
+            "id": "79",
+            "url": "https://www.service-bw.de/zufi/leistungen/79",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "83",
+            "url": "https://www.service-bw.de/zufi/leistungen/83",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "87",
+            "url": "https://www.service-bw.de/zufi/leistungen/87",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "90",
+            "url": "https://www.service-bw.de/zufi/leistungen/90",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "120",
+            "url": "https://www.service-bw.de/zufi/leistungen/120",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "122",
+            "url": "https://www.service-bw.de/zufi/leistungen/122",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "133",
+            "url": "https://www.service-bw.de/zufi/leistungen/133",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "134",
+            "url": "https://www.service-bw.de/zufi/leistungen/134",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "145",
+            "url": "https://www.service-bw.de/zufi/leistungen/145",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "147",
+            "url": "https://www.service-bw.de/zufi/leistungen/147",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "159",
+            "url": "https://www.service-bw.de/zufi/leistungen/159",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "167",
+            "url": "https://www.service-bw.de/zufi/leistungen/167",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "172",
+            "url": "https://www.service-bw.de/zufi/leistungen/172",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "174",
+            "url": "https://www.service-bw.de/zufi/leistungen/174",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "175",
+            "url": "https://www.service-bw.de/zufi/leistungen/175",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "185",
+            "url": "https://www.service-bw.de/zufi/leistungen/185",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "212",
+            "url": "https://www.service-bw.de/zufi/leistungen/212",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "217",
+            "url": "https://www.service-bw.de/zufi/leistungen/217",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "233",
+            "url": "https://www.service-bw.de/zufi/leistungen/233",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "242",
+            "url": "https://www.service-bw.de/zufi/leistungen/242",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "263",
+            "url": "https://www.service-bw.de/zufi/leistungen/263",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "266",
+            "url": "https://www.service-bw.de/zufi/leistungen/266",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "268",
+            "url": "https://www.service-bw.de/zufi/leistungen/268",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "270",
+            "url": "https://www.service-bw.de/zufi/leistungen/270",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "379",
+            "url": "https://www.service-bw.de/zufi/leistungen/379",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "389",
+            "url": "https://www.service-bw.de/zufi/leistungen/389",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "397",
+            "url": "https://www.service-bw.de/zufi/leistungen/397",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "447",
+            "url": "https://www.service-bw.de/zufi/leistungen/447",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "479",
+            "url": "https://www.service-bw.de/zufi/leistungen/479",
+            "error": "'str' object is not a mapping"
+        },
+        {
+            "id": "495",
+            "url": "https://www.service-bw.de/zufi/leistungen/495",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "536",
+            "url": "https://www.service-bw.de/zufi/leistungen/536",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "560",
+            "url": "https://www.service-bw.de/zufi/leistungen/560",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "626",
+            "url": "https://www.service-bw.de/zufi/leistungen/626",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "636",
+            "url": "https://www.service-bw.de/zufi/leistungen/636",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "713",
+            "url": "https://www.service-bw.de/zufi/leistungen/713",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "768",
+            "url": "https://www.service-bw.de/zufi/leistungen/768",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "775",
+            "url": "https://www.service-bw.de/zufi/leistungen/775",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "785",
+            "url": "https://www.service-bw.de/zufi/leistungen/785",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "854",
+            "url": "https://www.service-bw.de/zufi/leistungen/854",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "922",
+            "url": "https://www.service-bw.de/zufi/leistungen/922",
+            "error": "'str' object is not a mapping"
+        },
+        {
+            "id": "926",
+            "url": "https://www.service-bw.de/zufi/leistungen/926",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "937",
+            "url": "https://www.service-bw.de/zufi/leistungen/937",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "956",
+            "url": "https://www.service-bw.de/zufi/leistungen/956",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "971",
+            "url": "https://www.service-bw.de/zufi/leistungen/971",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1005",
+            "url": "https://www.service-bw.de/zufi/leistungen/1005",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1006",
+            "url": "https://www.service-bw.de/zufi/leistungen/1006",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1007",
+            "url": "https://www.service-bw.de/zufi/leistungen/1007",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1035",
+            "url": "https://www.service-bw.de/zufi/leistungen/1035",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1064",
+            "url": "https://www.service-bw.de/zufi/leistungen/1064",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1065",
+            "url": "https://www.service-bw.de/zufi/leistungen/1065",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1073",
+            "url": "https://www.service-bw.de/zufi/leistungen/1073",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1077",
+            "url": "https://www.service-bw.de/zufi/leistungen/1077",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1080",
+            "url": "https://www.service-bw.de/zufi/leistungen/1080",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1092",
+            "url": "https://www.service-bw.de/zufi/leistungen/1092",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1115",
+            "url": "https://www.service-bw.de/zufi/leistungen/1115",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1116",
+            "url": "https://www.service-bw.de/zufi/leistungen/1116",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1161",
+            "url": "https://www.service-bw.de/zufi/leistungen/1161",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1179",
+            "url": "https://www.service-bw.de/zufi/leistungen/1179",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1194",
+            "url": "https://www.service-bw.de/zufi/leistungen/1194",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1208",
+            "url": "https://www.service-bw.de/zufi/leistungen/1208",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1234",
+            "url": "https://www.service-bw.de/zufi/leistungen/1234",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1240",
+            "url": "https://www.service-bw.de/zufi/leistungen/1240",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1256",
+            "url": "https://www.service-bw.de/zufi/leistungen/1256",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1334",
+            "url": "https://www.service-bw.de/zufi/leistungen/1334",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1395",
+            "url": "https://www.service-bw.de/zufi/leistungen/1395",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1418",
+            "url": "https://www.service-bw.de/zufi/leistungen/1418",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1455",
+            "url": "https://www.service-bw.de/zufi/leistungen/1455",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1463",
+            "url": "https://www.service-bw.de/zufi/leistungen/1463",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1719",
+            "url": "https://www.service-bw.de/zufi/leistungen/1719",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1726",
+            "url": "https://www.service-bw.de/zufi/leistungen/1726",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1776",
+            "url": "https://www.service-bw.de/zufi/leistungen/1776",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1790",
+            "url": "https://www.service-bw.de/zufi/leistungen/1790",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1791",
+            "url": "https://www.service-bw.de/zufi/leistungen/1791",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1798",
+            "url": "https://www.service-bw.de/zufi/leistungen/1798",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1819",
+            "url": "https://www.service-bw.de/zufi/leistungen/1819",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1846",
+            "url": "https://www.service-bw.de/zufi/leistungen/1846",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1874",
+            "url": "https://www.service-bw.de/zufi/leistungen/1874",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1881",
+            "url": "https://www.service-bw.de/zufi/leistungen/1881",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1926",
+            "url": "https://www.service-bw.de/zufi/leistungen/1926",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "1939",
+            "url": "https://www.service-bw.de/zufi/leistungen/1939",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "2007",
+            "url": "https://www.service-bw.de/zufi/leistungen/2007",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "2091",
+            "url": "https://www.service-bw.de/zufi/leistungen/2091",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "2123",
+            "url": "https://www.service-bw.de/zufi/leistungen/2123",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "2175",
+            "url": "https://www.service-bw.de/zufi/leistungen/2175",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "2194",
+            "url": "https://www.service-bw.de/zufi/leistungen/2194",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "3307",
+            "url": "https://www.service-bw.de/zufi/leistungen/3307",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "4178",
+            "url": "https://www.service-bw.de/zufi/leistungen/4178",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "6001051",
+            "url": "https://www.service-bw.de/zufi/leistungen/6001051",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "6016853",
+            "url": "https://www.service-bw.de/zufi/leistungen/6016853",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "6018027",
+            "url": "https://www.service-bw.de/zufi/leistungen/6018027",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "6018037",
+            "url": "https://www.service-bw.de/zufi/leistungen/6018037",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "6023707",
+            "url": "https://www.service-bw.de/zufi/leistungen/6023707",
+            "error": "'str' object is not a mapping"
+        },
+        {
+            "id": "6023745",
+            "url": "https://www.service-bw.de/zufi/leistungen/6023745",
+            "error": "'NoneType' object has no attribute 'get'"
+        },
+        {
+            "id": "6023755",
+            "url": "https://www.service-bw.de/zufi/leistungen/6023755",
+            "error": "'NoneType' object has no attribute 'get'"
+        }
+    ]
+}

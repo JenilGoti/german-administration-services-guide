@@ -1,7 +1,7 @@
 NODES
 
 (:Situation {id, name, url})
-(:SubSituation {id, name, url,description, isSelf})
+(:SubSituation {id, name, url, description, summary, scrapedAt, isSelf})
 (:Service {id, name, url, description, source, regionalisierbar, scrapedAt})
 (:ServiceSection {id, type, title, text, html, order})
 (:Requirement {id, text, type, mandatory, confidence, sourceText})

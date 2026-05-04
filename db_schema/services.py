@@ -140,7 +140,10 @@ class ServiceBWGraphWriter:
             MERGE (sub:SubSituation {id: row.sub_id})
             SET sub.name = row.sub_name,
                 sub.url = row.sub_url,
-                sub.description = row.sub_description,
+                sub.description = CASE
+                    WHEN row.sub_description <> "" THEN row.sub_description
+                    ELSE sub.description
+                END,
                 sub.isSelf = row.is_self
 
             MERGE (sit)-[:HAS_SUB_SITUATION]->(sub)
@@ -208,6 +211,55 @@ class ServiceBWGraphWriter:
             "sub_situation_chunks": sub_situation_chunks,
             "service_chunks": service_chunks,
         }
+
+    # ------------------------
+    # SUB-SITUATION DETAILS
+    # ------------------------
+    def insert_sub_situation_details(self, sub_situations: List[Dict[str, Any]]):
+        rows = [
+            {
+                "id": str(s.get("id")),
+                "name": s.get("name", ""),
+                "url": s.get("url", ""),
+                "description": s.get("description", ""),
+                "summary": s.get("summary", ""),
+                "scrapedAt": s.get("scrapedAt", datetime.utcnow().isoformat()),
+                "source": s.get("source", "service-bw"),
+            }
+            for s in self._safe_list(sub_situations)
+            if s.get("id")
+        ]
+
+        if not rows:
+            return {"sub_situations": 0, "sub_situation_chunks": 0}
+
+        with self._session() as session:
+            session.run("""
+            UNWIND $rows AS row
+
+            MERGE (sub:SubSituation {id: row.id})
+            SET sub.name = row.name,
+                sub.url = row.url,
+                sub.description = row.description,
+                sub.summary = row.summary,
+                sub.scrapedAt = row.scrapedAt
+            """, {"rows": rows})
+
+        chunks = self._embed_unique_rows(
+            "SubSituation",
+            rows,
+            lambda r: "\n".join(
+                part
+                for part in [
+                    r.get("name", ""),
+                    r.get("summary", ""),
+                    r.get("description", ""),
+                ]
+                if part
+            )
+        )
+
+        return {"sub_situations": len(rows), "sub_situation_chunks": chunks}
 
     # ------------------------
     # SERVICES
@@ -316,11 +368,10 @@ class ServiceBWGraphWriter:
             MERGE (svc)-[:REQUIRES]->(req)
 
             WITH row, req
-            WHERE row.document_id IS NOT NULL
+            WHERE row.document_normalized_name IS NOT NULL
 
-            MERGE (doc:Document {id: row.document_id})
+            MERGE (doc:Document {normalizedName: row.document_normalized_name})
             SET doc.name = row.document_name,
-                doc.normalizedName = row.document_normalized_name,
                 doc.description = row.document_description,
                 doc.language = row.document_language
 
@@ -335,9 +386,8 @@ class ServiceBWGraphWriter:
 
         document_rows = []
         for row in rows:
-            if row.get("document_id"):
+            if row.get("document_normalized_name"):
                 document_rows.append({
-                    "id": row.get("document_id"),
                     "name": row.get("document_name", ""),
                     "normalizedName": row.get("document_normalized_name", ""),
                     "description": row.get("document_description", ""),
@@ -373,7 +423,7 @@ class ServiceBWGraphWriter:
             UNWIND $rows AS row
 
             MERGE (svc:Service {id: row.service_id})
-            MERGE (doc:Document {id: row.document_id})
+            MERGE (doc:Document {normalizedName: row.document_normalized_name})
 
             MERGE (svc)-[:ISSUES]->(doc)
             MERGE (doc)-[:OBTAINED_BY]->(svc)
@@ -581,7 +631,7 @@ class ServiceBWGraphWriter:
             )
 
             WITH row, problem
-            OPTIONAL MATCH (doc:Document {id: row.document_id})
+            OPTIONAL MATCH (doc:Document {normalizedName: row.document_normalized_name})
             FOREACH (_ IN CASE WHEN doc IS NULL THEN [] ELSE [1] END |
                 MERGE (problem)-[:INVOLVES_DOCUMENT]->(doc)
             )
@@ -619,6 +669,8 @@ class ServiceBWGraphWriter:
         result = {}
         if payload.get("situations", []):
             result.update(self.insert_situation_tree(payload.get("situations", [])))
+        if payload.get("sub_situations", []):
+            result.update(self.insert_sub_situation_details(payload.get("sub_situations", [])))
         if payload.get("services", []):
             result.update(self.insert_services(payload.get("services", [])))
         if payload.get("service_sections", []):
