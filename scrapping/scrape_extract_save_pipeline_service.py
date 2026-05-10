@@ -5,6 +5,7 @@ from langgraph.graph import END, START, StateGraph
 
 from scrapping.agent_page_scraper_tool import AgentPageScraperTool
 from brain.llm import LLM_V1
+from brain.prompts import SERVICE_EXTRACT_SYSTEM, build_service_extract_prompt
 
 
 class SingleServiceFlushState(TypedDict, total=False):
@@ -139,15 +140,7 @@ class SingleServiceFlushAgent:
     def __init__(self, graph_writer):
         self.scraper = AgentPageScraperTool()
         self.graph_writer = graph_writer
-        self.llm = LLM_V1(
-            system_message="""
-            You are an expert German public-administration data extraction system.
-            Extract structured data for one Service-BW service page only.
-            Return only valid JSON.
-            Do not include markdown.
-            Do not invent facts that are not supported by the page text.
-            """
-        )
+        self.llm = LLM_V1(system_message=SERVICE_EXTRACT_SYSTEM)
         self.app = self.build_graph()
 
     # -----------------------------
@@ -228,49 +221,7 @@ class SingleServiceFlushAgent:
     # PROMPT
     # -----------------------------
     def _build_service_prompt(self, scraped: Dict[str, Any]) -> str:
-        context = {
-            "url": scraped.get("url", ""),
-            "sourceType": scraped.get("sourceType", ""),
-            "sourceId": scraped.get("sourceId", ""),
-            "title": scraped.get("title", ""),
-            "service": scraped.get("service") or {},
-            "serviceSections": scraped.get("serviceSections") or [],
-            "forms": scraped.get("forms") or [],
-            "authorities": scraped.get("authorities") or [],
-            "processSteps": scraped.get("processSteps") or [],
-            "legalBasis": scraped.get("legalBasis") or [],
-            "rawText": scraped.get("rawText", ""),
-        }
-
-        return f"""
-
-        Scraped service page:
-{json.dumps(context, ensure_ascii=False, indent=2)}
-
-Extract structured data for ONE service page.
-
-Rules:
-- Output only data related to this one service page.
-- Do not output situations.
-- Do not output sub_situations.
-- The service_id MUST be "{scraped.get("sourceId", "")}" everywhere.
-- Service.id MUST be "{scraped.get("sourceId", "")}".
-- For every service_sections item, service_id MUST be "{scraped.get("sourceId", "")}".
-- For every requirements item, service_id MUST be "{scraped.get("sourceId", "")}".
-- For every authorities item, service_id MUST be "{scraped.get("sourceId", "")}".
-- For every forms item, service_id MUST be "{scraped.get("sourceId", "")}".
-- For every process_steps item, service_id MUST be "{scraped.get("sourceId", "")}".
-- For every legal_basis item, service_id MUST be "{scraped.get("sourceId", "")}".
-- For every goals item, service_id MUST be "{scraped.get("sourceId", "")}".
-- For every dependency_problems item, service_id MUST be "{scraped.get("sourceId", "")}" if the problem involves this service.
-- Use the known scraper data when available.
-- Extract requirements from prerequisites, required documents, deadlines, costs, and procedure text.
-- If a requirement is a document, fill the document fields.
-- Use document_issuers only if the page clearly says this service issues a document.
-- Use goals only when the page clearly supports a user goal achieved by this service.
-- Use dependency_problems only when the page clearly shows a dependency issue, missing source, dead end, or ambiguity.
-- If unknown, use empty string, null, false, or empty list.
-"""
+        return build_service_extract_prompt(scraped)
 
     # -----------------------------
     # FULL SERVICE PAYLOAD, WITH SERVICE ID NORMALIZATION

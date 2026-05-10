@@ -4,6 +4,7 @@ from typing import Any, Dict, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from brain.llm import LLM_V1
+from brain.prompts import SUB_SITUATION_EXTRACT_SYSTEM, build_sub_situation_extract_prompt
 from scrapping.agent_page_scraper_tool import AgentPageScraperTool
 
 
@@ -43,15 +44,7 @@ class SingleSubSituationFlushAgent:
     def __init__(self, graph_writer):
         self.scraper = AgentPageScraperTool()
         self.graph_writer = graph_writer
-        self.llm = LLM_V1(
-            system_message="""
-            You are an expert German public-administration content cleaner.
-            Extract and summarize one Service-BW life-situation page.
-            Return only valid JSON.
-            Do not include markdown.
-            Do not invent facts that are not supported by the page text.
-            """
-        )
+        self.llm = LLM_V1(system_message=SUB_SITUATION_EXTRACT_SYSTEM)
         self.app = self.build_graph()
 
     def scrape_node(self, state: SingleSubSituationFlushState):
@@ -116,34 +109,7 @@ class SingleSubSituationFlushAgent:
         return self.app.invoke({"url": url})
 
     def _build_sub_situation_prompt(self, scraped: Dict[str, Any]) -> str:
-        context = {
-            "url": scraped.get("url", ""),
-            "sourceType": scraped.get("sourceType", ""),
-            "sourceId": scraped.get("sourceId", ""),
-            "title": scraped.get("title", ""),
-            "rawText": scraped.get("rawText", ""),
-            "description": (scraped.get("situation") or {}).get("description", ""),
-            "services": scraped.get("services") or [],
-            "subSituations": scraped.get("subSituations") or [],
-        }
-
-        return f"""
-Scraped Service-BW sub-situation page:
-{json.dumps(context, ensure_ascii=False, indent=2)}
-
-Extract structured data for ONE sub-situation page.
-
-Rules:
-- Output only one sub_situations item.
-- SubSituation.id MUST be "{scraped.get("sourceId", "")}".
-- Use the page title as name if present.
-- description should be cleaned German page content, preserving useful administrative meaning.
-- summary should be a concise 2-4 sentence German summary for retrieval and user matching.
-- rawText MUST use the provided raw page text, not a rewritten version.
-- Do not output services as separate graph records.
-- Do not output situations.
-- If a field is unknown, use an empty string.
-"""
+        return build_sub_situation_extract_prompt(scraped)
 
     def _normalize_sub_situation_payload(
         self,

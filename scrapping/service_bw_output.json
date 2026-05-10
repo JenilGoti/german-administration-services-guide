@@ -8278,7 +8278,7 @@
             {
               "id": "1822",
               "url": "https://www.service-bw.de/zufi/leistungen/1822",
-              "name": "Ehefähigkeitszeugnis - Ausstellung beantragen"
+              "name": "Ehefähigkeitszeugnis beantragen"
             },
             {
               "id": "178",
@@ -8441,7 +8441,7 @@
             {
               "id": "1822",
               "url": "https://www.service-bw.de/zufi/leistungen/1822",
-              "name": "Ehefähigkeitszeugnis - Ausstellung beantragen"
+              "name": "Ehefähigkeitszeugnis beantragen"
             },
             {
               "id": "178",
@@ -8856,7 +8856,7 @@
             {
               "id": "1822",
               "url": "https://www.service-bw.de/zufi/leistungen/1822",
-              "name": "Ehefähigkeitszeugnis - Ausstellung beantragen"
+              "name": "Ehefähigkeitszeugnis beantragen"
             },
             {
               "id": "178",
@@ -8965,7 +8965,7 @@
             {
               "id": "1822",
               "url": "https://www.service-bw.de/zufi/leistungen/1822",
-              "name": "Ehefähigkeitszeugnis - Ausstellung beantragen"
+              "name": "Ehefähigkeitszeugnis beantragen"
             },
             {
               "id": "178",
@@ -25624,11 +25624,6 @@
               "name": "Blaue Karte EU zur Ausübung einer hochqualifizierten Beschäftigung beantragen"
             },
             {
-              "id": "6005565",
-              "url": "https://www.service-bw.de/zufi/leistungen/6005565",
-              "name": "Brexit - Aufenthaltsrecht nach dem Austrittsabkommen nachweisen"
-            },
-            {
               "id": "807",
               "url": "https://www.service-bw.de/zufi/leistungen/807",
               "name": "Daueraufenthalt-EU - Erlaubnis beantragen"
@@ -25941,11 +25936,6 @@
               "name": "Blaue Karte EU zur Ausübung einer hochqualifizierten Beschäftigung beantragen"
             },
             {
-              "id": "6005565",
-              "url": "https://www.service-bw.de/zufi/leistungen/6005565",
-              "name": "Brexit - Aufenthaltsrecht nach dem Austrittsabkommen nachweisen"
-            },
-            {
               "id": "807",
               "url": "https://www.service-bw.de/zufi/leistungen/807",
               "name": "Daueraufenthalt-EU - Erlaubnis beantragen"
@@ -26113,19 +26103,6 @@
             }
           ],
           "name": "Blaue Karte EU (\"Blue Card EU\")"
-        },
-        {
-          "id": "5001649",
-          "url": "https://www.service-bw.de/zufi/lebenslagen/5001649",
-          "is_self": false,
-          "services": [
-            {
-              "id": "6005565",
-              "url": "https://www.service-bw.de/zufi/leistungen/6005565",
-              "name": "Brexit - Aufenthaltsrecht nach dem Austrittsabkommen nachweisen"
-            }
-          ],
-          "name": "Brexit - Informationen für britische Staatsangehörige"
         },
         {
           "id": "5000016",
@@ -26341,7 +26318,7 @@
   ],
   "summary": {
     "situations": 53,
-    "sub_situations": 1032,
-    "services": 3625
+    "sub_situations": 1031,
+    "services": 3622
   }
 }

@@ -4,6 +4,7 @@ from typing import Any, Dict
 from db_schema.services import ServiceBWGraphWriter
 from graph_db import DatabaseManager
 from scrapping.all_links_scrapping import ServiceBWCrawler
+from config import KNOWLEDGE_DB
 
 
 def save_json(data: Dict[str, Any], path: str) -> None:
@@ -20,7 +21,7 @@ def main() -> None:
     db_manager = DatabaseManager()
     writer = ServiceBWGraphWriter(
         db_manager,
-        db_name="dev-graph",
+        db_name=KNOWLEDGE_DB,
         enable_embeddings=True,
     )
     writer.ensure_constraints()

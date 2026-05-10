@@ -8,7 +8,7 @@ class WebScraper:
 
         try:
             headers = {
-                "User-Agent": "Mozilla/5.0 (WRAITH Bot)"
+                "User-Agent": "Mozilla/5.0 (Research Assistant Bot)"
             }
 
             response = requests.get(url, headers=headers, timeout=10)

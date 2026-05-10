@@ -1,6 +1,12 @@
 import uuid
 import time
 import json
+from brain.prompts import (
+    CONVERSATION_CHUNK_SUMMARY_PROMPT,
+    CONVERSATION_MEMORY_PROMPT,
+    CONVERSATION_SUMMARY_MEMORY_PROMPT,
+    MESSAGE_MEMORY_LINE_PROMPT,
+)
 
 
 class Message:
@@ -24,7 +30,11 @@ class Message:
         }
     
     def prompt(self):
-        return f"""[{self.role},{self.timestamp}]: {json.dumps(self.content) if isinstance(self.content, dict) else self.content}\n"""
+        return MESSAGE_MEMORY_LINE_PROMPT.format(
+            role=self.role,
+            timestamp=self.timestamp,
+            content=json.dumps(self.content) if isinstance(self.content, dict) else self.content,
+        )
 
 class ConversationSummary:
     def __init__(self, conversation: Conversation, messages, llm=None):
@@ -64,18 +74,7 @@ class ConversationSummary:
             f"{m.role}: {m.content}" for m in self.messages
         ])
 
-        return llm.invoke(f"""
-        Summarize the following conversation chunk briefly:
-
-        {text_block}
-
-        Requirements:
-        - Keep important facts
-        - don't miss any person name or id
-        - Preserve user intent
-        - Remove repetition
-        - Be concise but meaningful
-        """)
+        return llm.invoke(CONVERSATION_CHUNK_SUMMARY_PROMPT.format(text_block=text_block))
 
         self.conversation.add_summary(summary=self)
 
@@ -91,10 +90,11 @@ class ConversationSummary:
             "message_count": self.message_count,
         }
     def prompt(self):
-        return f"""
-        [SUMMARY | {self.start_timestamp} → {self.end_timestamp}] \n
-        {self.content}
-        """
+        return CONVERSATION_SUMMARY_MEMORY_PROMPT.format(
+            start_timestamp=self.start_timestamp,
+            end_timestamp=self.end_timestamp,
+            content=self.content,
+        )
 
 
 class Conversation:
@@ -182,10 +182,7 @@ class Conversation:
                 conversation += message.prompt()
             elif type(message) == ConversationSummary:
                 conversation += message.prompt()
-        return f"""
-        following is our privious conversation:
-        {conversation}
-        """
+        return CONVERSATION_MEMORY_PROMPT.format(conversation=conversation)
 
 
 class User:

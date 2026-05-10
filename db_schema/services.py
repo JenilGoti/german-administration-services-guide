@@ -2,10 +2,11 @@ from typing import Dict, Any, List
 import hashlib
 from datetime import datetime
 from graph_db import GraphMemoryIngestor
+from config import KNOWLEDGE_DB
 
 
 class ServiceBWGraphWriter:
-    def __init__(self, db_manager, db_name="dev-graph", enable_embeddings=True):
+    def __init__(self, db_manager, db_name=KNOWLEDGE_DB, enable_embeddings=True):
         self.db = db_manager
         self.db_name = db_name
         self.enable_embeddings = enable_embeddings
@@ -332,7 +333,7 @@ class ServiceBWGraphWriter:
         chunks = self._embed_unique_rows(
             "ServiceSection",
             rows,
-            lambda r: f"{r.get('title', '')}\n{r.get('type', '')}"
+            lambda r: f"{r.get('title', '')}\n{r.get('type', '')}\n{r.get('text', '')}"
         )
 
         return {"service_sections": len(rows), "service_section_chunks": chunks}
@@ -371,7 +372,8 @@ class ServiceBWGraphWriter:
             WHERE row.document_normalized_name IS NOT NULL
 
             MERGE (doc:Document {normalizedName: row.document_normalized_name})
-            SET doc.name = row.document_name,
+            SET doc.id = row.document_normalized_name,
+                doc.name = row.document_name,
                 doc.description = row.document_description,
                 doc.language = row.document_language
 
@@ -388,6 +390,7 @@ class ServiceBWGraphWriter:
         for row in rows:
             if row.get("document_normalized_name"):
                 document_rows.append({
+                    "id": row.get("document_normalized_name", ""),
                     "name": row.get("document_name", ""),
                     "normalizedName": row.get("document_normalized_name", ""),
                     "description": row.get("document_description", ""),
@@ -424,6 +427,7 @@ class ServiceBWGraphWriter:
 
             MERGE (svc:Service {id: row.service_id})
             MERGE (doc:Document {normalizedName: row.document_normalized_name})
+            SET doc.id = row.document_normalized_name
 
             MERGE (svc)-[:ISSUES]->(doc)
             MERGE (doc)-[:OBTAINED_BY]->(svc)
@@ -669,30 +673,42 @@ class ServiceBWGraphWriter:
         result = {}
         if payload.get("situations", []):
             result.update(self.insert_situation_tree(payload.get("situations", [])))
+            print("inserted situations")
         if payload.get("sub_situations", []):
             result.update(self.insert_sub_situation_details(payload.get("sub_situations", [])))
+            print("inserted sub situations")
         if payload.get("services", []):
             result.update(self.insert_services(payload.get("services", [])))
+            print("inserted services")
         if payload.get("service_sections", []):
             result.update(self.insert_service_sections(payload.get("service_sections", [])))
+            print("inserted service sections")
         if payload.get("requirements", []):
             result.update(self.insert_requirements(payload.get("requirements", [])))
+            print("inserted requirements")
         if payload.get("document_issuers", []):
             result.update(self.insert_document_issuers(payload.get("document_issuers", [])))
+            print("inserted document issuers")
         if payload.get("authorities", []):
             result.update(self.insert_authorities(payload.get("authorities", [])))
+            print("inserted authorities")
         if payload.get("forms", []):
             result.update(self.insert_forms(payload.get("forms", [])))
+            print("inserted forms")
         if payload.get("process_steps", []):
             result.update(self.insert_process_steps(payload.get("process_steps", [])))
+            print("inserted process steps")
         if payload.get("legal_basis", []):
             result.update(self.insert_legal_basis(payload.get("legal_basis", [])))
+            print("inserted legal basis")
         if payload.get("goals", []):
             result.update(self.insert_goals(payload.get("goals", [])))
+            print("inserted goals")
         if payload.get("dependency_problems", []):
             result.update(self.insert_dependency_problems(payload.get("dependency_problems", [])))
-
+            print("inserted dependency problems")
         if payload.get("derive_dependencies", True):
             result.update(self.derive_service_dependencies())
+            print("derived dependencies")
 
         return result

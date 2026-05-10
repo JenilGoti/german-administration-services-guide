@@ -1,8 +1,9 @@
 from neo4j import GraphDatabase
-from config import GDB_URL, GDB_USER, GDB_PASSWORD
+from config import GDB_URL, GDB_USER, GDB_PASSWORD, OLLAMA_EMBEDDING_MODEL
 from neo4j_graphrag.embeddings import OllamaEmbeddings
 from neo4j_graphrag.retrievers import VectorCypherRetriever
 from brain.llm import LLM_V1
+from brain.prompts import ENTITY_EXTRACTION_SYSTEM
 import uuid
 import json
 
@@ -24,13 +25,8 @@ class GraphMemoryIngestor:
         self.embedding_dim = 1024
         self.db = DatabaseManager()
         self.db_name = db_name
-        self.embedder = OllamaEmbeddings(model="mxbai-embed-large")
-        self.llm = LLM_V1(
-            system_message="""
-            You are an expert entity extraction system.
-            Your job is to extract entities from text and classify them.
-            """
-        )      
+        self.embedder = OllamaEmbeddings(model=OLLAMA_EMBEDDING_MODEL)
+        self.llm = LLM_V1(system_message=ENTITY_EXTRACTION_SYSTEM)
         self.ensure_vector_index(dimensions=self.embedding_dim)
 
     def _session(self):
@@ -69,9 +65,13 @@ class GraphMemoryIngestor:
         return self.embedder.embed_query(text)
 
     def extract_entities(self, text):
-        return self.llm.invoke_with_formated_response(text, formate=json.dumps([
-              {"name": "...", "type": "Person|Org|Concept|Other"}
-            ]))
+        try:
+            return self.llm.invoke_with_formated_response(text, formate=json.dumps([
+                {"name": "...", "type": "Person|Org|Concept|Other"}
+                ]))
+        except Exception as e:
+            print("Error extracting entities", e)
+            return []
 
     def ingest(self, node_name, node_id, text):
         entities = self.extract_entities(text)
@@ -192,13 +192,19 @@ class GraphMemoryIngestor:
         Perform Vector + Graph search filtered by node type
         """
         def format_result(record):
+            parent = dict(record.get("parent"))
+            content = "\n".join(
+                str(parent.get(key, ""))
+                for key in ["name", "summary", "description", "text", "title", "url"]
+                if parent.get(key)
+            )
+
             return {
-                **dict(record.get("parent")),
-                "metadata":{
-                    **dict(record.get("parent")),
+                "content": content or str(parent),
+                "metadata": {
+                    **parent,
                     "score": record.get("score"),
                     "entities": record.get("entities"),
-                    "related_entities": record.get("related_entities")               
                 }
             }
 
@@ -212,11 +218,9 @@ class GraphMemoryIngestor:
                 MATCH (node)<-[:HAS_CHUNK]-(parent:{node_name})
 
                 OPTIONAL MATCH (node)-[:MENTIONS]->(e:Entity)
-                OPTIONAL MATCH (e)-[:RELATED_TO]->(e2:Entity)
 
                 RETURN
                     collect(DISTINCT e.name) AS entities,
-                    collect(DISTINCT e2.name) AS related_entities,
                     parent,
                     score
                 ORDER BY score DESC

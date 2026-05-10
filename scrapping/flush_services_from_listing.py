@@ -1,15 +1,26 @@
 import json
 import time
+from pathlib import Path
 from typing import Any, Dict, List
 
 from graph_db import DatabaseManager
 from db_schema.services import ServiceBWGraphWriter
 from scrapping.scrape_extract_save_pipeline_service import SingleServiceFlushAgent
+from consts import KG_DB_NAME
+
+SCRAPPING_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRAPPING_DIR.parent
+SERVICE_BW_OUTPUT_PATH = SCRAPPING_DIR / "service_bw_output.json"
+LEGACY_SERVICE_BW_OUTPUT_PATH = PROJECT_ROOT / "service_bw_output.json"
 
 
-def load_json(path: str) -> Dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as file:
-        return json.load(file)
+def load_json(path: str | Path = SERVICE_BW_OUTPUT_PATH) -> Dict[str, Any]:
+    candidates = [Path(path), SERVICE_BW_OUTPUT_PATH, LEGACY_SERVICE_BW_OUTPUT_PATH]
+    for candidate in candidates:
+        if candidate.exists():
+            with candidate.open("r", encoding="utf-8") as file:
+                return json.load(file)
+    raise FileNotFoundError(f"Could not find service-bw output JSON. Expected {SERVICE_BW_OUTPUT_PATH}")
 
 
 def service_sort_key(service: Dict[str, Any]):
@@ -102,9 +113,7 @@ def flush_services(
 
 def main():
 
-    data = load_json("scrapping/service_bw_output.json")
-    # data = load_json("scrapping/failed_to_scrape.json")
-    # services = data['errors']
+    data = load_json()
     services = extract_unique_services(data)
     services = filter_services(
         services,
@@ -117,7 +126,7 @@ def main():
 
     # Uncomment and adjust these lines in your project.
     db_manager = DatabaseManager()
-    writer = ServiceBWGraphWriter(db_manager, db_name="dev-graph", enable_embeddings=True)
+    writer = ServiceBWGraphWriter(db_manager, db_name=KG_DB_NAME, enable_embeddings=True)
     writer.ensure_constraints()
     summary = flush_services(services, graph_writer=writer, delay_seconds=0.5)
     print(json.dumps(summary, ensure_ascii=False, indent=2))

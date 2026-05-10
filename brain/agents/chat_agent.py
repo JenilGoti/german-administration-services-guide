@@ -3,6 +3,7 @@ from langgraph.graph import StateGraph, START, END
 from brain.llm import LLM_V1
 from brain.memory.short_term_graph_memory import Neo4jMemory
 from brain.memory.conversation import Message
+from brain.prompts import CHAT_ASSISTANT_SYSTEM
 
 
 # -----------------------------
@@ -19,7 +20,7 @@ class ChatState(TypedDict, total=False):
 class ChatAgent:
 
     def __init__(self, user_id: str, conv_id: str):
-        self.llm = LLM_V1("You are a helpful assistant.", memory=Neo4jMemory.get(user_id=user_id, conv_id=conv_id))
+        self.llm = LLM_V1(CHAT_ASSISTANT_SYSTEM, memory=Neo4jMemory.get(user_id=user_id, conv_id=conv_id))
         self.app = self.build_graph()
 
     

@@ -1,9 +1,13 @@
 import json
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set
 
 import requests
+
+SCRAPPING_DIR = Path(__file__).resolve().parent
+SERVICE_BW_OUTPUT_PATH = SCRAPPING_DIR / "service_bw_output.json"
 
 
 @dataclass
@@ -190,16 +194,19 @@ class ServiceBWCrawler:
             },
         }
 
-    def save_json(self, data: Dict, filename: str = "service_bw_output.json") -> str:
-        with open(filename, "w", encoding="utf-8") as file:
+    def save_json(self, data: Dict, filename: str | Path = SERVICE_BW_OUTPUT_PATH) -> str:
+        output_path = Path(filename)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with output_path.open("w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=2)
-        return filename
+        return str(output_path)
 
 
-if __name__ == "__main__":
+def main():
     crawler = ServiceBWCrawler()
     output = crawler.crawl()
     file_path = crawler.save_json(output)
 
     print("Saved:", file_path)
     print(json.dumps(output["summary"], indent=2, ensure_ascii=False))
+    return file_path

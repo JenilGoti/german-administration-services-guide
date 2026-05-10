@@ -2,6 +2,10 @@ from graph_db import DatabaseManager, GraphMemoryIngestor
 from config import SHORT_TERM_DB
 from brain.memory.conversation import Conversation, Message, ConversationSummary
 from brain.llm import LLM_V1
+from brain.prompts import MEMORY_COMPRESSION_SYSTEM
+import json
+import time
+import uuid
 
 MAX_MESSAGES = 10
 
@@ -25,9 +29,7 @@ class Neo4jMemory:
         self.conversation = Conversation(conv_id, user_id)
         self.init_graph()
         self.load_conversation()
-        self.llm = LLM_V1(
-            "You are a memory compression system. Summarize the conversation as a third person clearly, preserving key facts, decisions, and context."
-        )
+        self.llm = LLM_V1(MEMORY_COMPRESSION_SYSTEM)
         # print('conversation',self.conversation.prompt())
 
     def _session(self):
@@ -37,7 +39,7 @@ class Neo4jMemory:
         with self._session() as session:
             session.run("""
             MERGE (u:User {id: $user_id})
-            MERGE (c:Conversation {id: $conv_id})
+            MERGE (c:Conversation {id: $conv_id, user_id: $user_id})
             MERGE (u)-[:HAS_CONVERSATION]->(c)
             """, {
                 "user_id": self.user_id,
@@ -48,11 +50,13 @@ class Neo4jMemory:
         with self._session() as session:
             session.run("""
             MERGE (u:User {id: $user_id})
-            MERGE (c:Conversation {id: $conv_id})
+            MERGE (c:Conversation {id: $conv_id, user_id: $user_id})
             MERGE (u)-[:HAS_CONVERSATION]->(c)
 
             CREATE (m:Message {
                 id: $id,
+                user_id: $user_id,
+                conversation_id: $conv_id,
                 role: $role,
                 content: $content,
                 type: $type,
@@ -69,15 +73,21 @@ class Neo4jMemory:
                 "type": message.type,
                 "timestamp": message.timestamp
             })
-        self.ingestor.ingest(node_name="Message", node_id=message.id, text=message.content)
+        try:
+            self.ingestor.ingest(node_name="Message", node_id=message.id, text=message.content)
+        except Exception as exc:
+            print(f"[WARN] Message embedding failed: {exc}")
     
     def link_messages(self, prev_id, curr_id):
         with self._session() as session:
             session.run("""
-            MATCH (a:Message {id: $prev})
-            MATCH (b:Message {id: $curr})
+            MATCH (:User {id: $user_id})-[:HAS_CONVERSATION]->(c:Conversation {id: $conv_id, user_id: $user_id})
+            MATCH (c)-[:HAS_MESSAGE]->(a:Message {id: $prev})
+            MATCH (c)-[:HAS_MESSAGE]->(b:Message {id: $curr})
             MERGE (a)-[:NEXT]->(b)
             """, {
+                "user_id": self.user_id,
+                "conv_id": self.conv_id,
                 "prev": prev_id,
                 "curr": curr_id
             })
@@ -86,12 +96,15 @@ class Neo4jMemory:
         """Helper to find the most recent message ID in the graph."""
         with self._session() as session:
             result = session.run("""
-            MATCH (c:Conversation {id: $conv_id})-[:HAS_MESSAGE]->(m:Message)
+            MATCH (:User {id: $user_id})-[:HAS_CONVERSATION]->(c:Conversation {id: $conv_id, user_id: $user_id})-[:HAS_MESSAGE]->(m:Message)
             WHERE NOT (m)-[:NEXT]->()
             RETURN m.id AS id
             ORDER BY m.timestamp DESC
             LIMIT 1
-            """, {"conv_id": self.conv_id})
+            """, {
+                "user_id": self.user_id,
+                "conv_id": self.conv_id
+            })
             record = result.single()
             return record["id"] if record else None
 
@@ -135,11 +148,14 @@ class Neo4jMemory:
 
         with self._session() as session:
             session.run("""
-            MATCH (s:ConversationSummary {id: $summary_id})
+            MATCH (:User {id: $user_id})-[:HAS_CONVERSATION]->(c:Conversation {id: $conv_id, user_id: $user_id})
+            MATCH (c)-[:HAS_SUMMARY]->(s:ConversationSummary {id: $summary_id})
             UNWIND $message_ids AS mid
-            MATCH (m:Message {id: mid})
+            MATCH (c)-[:HAS_MESSAGE]->(m:Message {id: mid})
             MERGE (s)-[:SUMMARIZES]->(m)
             """, {
+                "user_id": self.user_id,
+                "conv_id": self.conv_id,
                 "summary_id": summary.id,
                 "message_ids": message_ids
             })
@@ -147,11 +163,12 @@ class Neo4jMemory:
         with self._session() as session:
             session.run("""
             MERGE (u:User {id: $user_id})
-            MERGE (c:Conversation {id: $conv_id})
+            MERGE (c:Conversation {id: $conv_id, user_id: $user_id})
             MERGE (u)-[:HAS_CONVERSATION]->(c)
 
             CREATE (s:ConversationSummary {
                 id: $id,
+                user_id: $user_id,
                 conversation_id: $conversation_id,
                 type: $type,
                 content: $content,
@@ -174,15 +191,58 @@ class Neo4jMemory:
                 "end_timestamp": summary.end_timestamp,
                 "message_count": summary.message_count
             })
-        self.ingestor.ingest(node_name="ConversationSummary", node_id=summary.id, text=summary.content)
+        try:
+            self.ingestor.ingest(node_name="ConversationSummary", node_id=summary.id, text=summary.content)
+        except Exception as exc:
+            print(f"[WARN] Conversation summary embedding failed: {exc}")
+
+    def save_agent_output(self, agent_name: str, output, step_type: str = "agent_output"):
+        output_text = output if isinstance(output, str) else json.dumps(output, ensure_ascii=False)
+        output_id = str(uuid.uuid4())
+
+        with self._session() as session:
+            session.run("""
+            MERGE (u:User {id: $user_id})
+            MERGE (c:Conversation {id: $conv_id, user_id: $user_id})
+            MERGE (u)-[:HAS_CONVERSATION]->(c)
+
+            CREATE (o:AgentOutput {
+                id: $id,
+                user_id: $user_id,
+                conversation_id: $conv_id,
+                agent_name: $agent_name,
+                step_type: $step_type,
+                content: $content,
+                timestamp: $timestamp
+            })
+
+            MERGE (c)-[:HAS_AGENT_OUTPUT]->(o)
+            """, {
+                "user_id": self.user_id,
+                "conv_id": self.conv_id,
+                "id": output_id,
+                "agent_name": agent_name,
+                "step_type": step_type,
+                "content": output_text,
+                "timestamp": time.time()
+            })
+
+        if output_text.strip():
+            try:
+                self.ingestor.ingest(node_name="AgentOutput", node_id=output_id, text=output_text)
+            except Exception as exc:
+                print(f"[WARN] Agent output embedding failed: {exc}")
+
+        return output_id
         
     def load_summaries(self):
         with self._session() as session:
             result = session.run("""
-            MATCH (c:Conversation {id: $conv_id})-[:HAS_SUMMARY]->(s:ConversationSummary)
+            MATCH (:User {id: $user_id})-[:HAS_CONVERSATION]->(c:Conversation {id: $conv_id, user_id: $user_id})-[:HAS_SUMMARY]->(s:ConversationSummary)
             RETURN s
             ORDER BY s.start_timestamp ASC
             """, {
+                "user_id": self.user_id,
                 "conv_id": self.conv_id
             })
 
@@ -208,14 +268,15 @@ class Neo4jMemory:
 
         with self._session() as session:
             result = session.run("""
-            MATCH (c:Conversation {id: $conv_id})-[:HAS_MESSAGE]->(m:Message)
+            MATCH (:User {id: $user_id})-[:HAS_CONVERSATION]->(c:Conversation {id: $conv_id, user_id: $user_id})-[:HAS_MESSAGE]->(m:Message)
             WHERE NOT EXISTS {
-                MATCH (:ConversationSummary)-[:SUMMARIZES]->(m)
+                MATCH (c)-[:HAS_SUMMARY]->(:ConversationSummary)-[:SUMMARIZES]->(m)
             }
             RETURN m
             ORDER BY m.timestamp DESC
             LIMIT $n
             """, {
+                "user_id": self.user_id,
                 "conv_id": self.conv_id,
                 "n": n
             })

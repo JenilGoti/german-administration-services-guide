@@ -1,20 +1,32 @@
-# from brain.agents.app import chat_agent
+import os
+
+os.environ.setdefault("MallocStackLogging", "0")
+os.environ.setdefault("MallocStackLoggingNoCompact", "0")
+
+from brain.logger import logger
+from brain.agents.app import chat_agent
 
 
-# while True:
-#     query = input("You: ")
-#     response = chat_agent.chat(query)
-#     print("Wraith: ", response)
+def print_response(response: str):
+    try:
+        from rich.console import Console
+        from rich.markdown import Markdown
+        from rich.panel import Panel
+    except ImportError:
+        print("\nAdministrative Assistant:\n")
+        print(response)
+        print()
+        return
 
-# from graph_db import GraphMemoryIngestor
+    console = Console()
+    console.print()
+    console.print(Panel(Markdown(response), title="Administrative Assistant", border_style="cyan"))
+    console.print()
 
-# memory = GraphMemoryIngestor(db_name="short-term")
 
-# print(memory.vector_cypher_search("What is football?", "Message", top_k=10))
-# from scrapping.flush_all_situations_mapping import main
-# main()
-# from scrapping.flush_services_from_listing import main
-# main()
-from scrapping.flush_sub_situations_from_listing import main
-main()
-
+while True:
+    query = input("You: ")
+    logger.info("chat.user_query length=%s", len(query))
+    response = chat_agent.chat(query)
+    logger.info("chat.response length=%s", len(response))
+    print_response(response)

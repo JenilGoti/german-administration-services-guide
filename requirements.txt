@@ -7,6 +7,7 @@ neo4j
 langgraph
 langchain
 langchain_ollama
+langchain-groq
 langchain-community
 langchain-neo4j[ollama]
 langchain-mcp-adapters
@@ -16,3 +17,8 @@ neo4j
 neo4j_graphrag
 duckduckgo-search
 mcp
+rich
+streamlit
+qdrant-client
+langgraph-checkpoint-postgres
+psycopg[binary,pool]

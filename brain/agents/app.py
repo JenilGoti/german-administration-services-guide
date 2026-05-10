@@ -4,11 +4,10 @@
 
 # search_graph = search_agent.app
 
-from brain.agents.chat_agent import ChatAgent
+from brain.agents.german_admin_agent import GermanAdminGuideAgent
 
-chat_agent = ChatAgent(user_id="1", conv_id="1")
+chat_agent = GermanAdminGuideAgent(user_id="4", conv_id="1")
 
 chat_graph = chat_agent.app
-
 
 
