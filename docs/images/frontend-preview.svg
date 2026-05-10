@@ -1,0 +1,51 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" fill="#0b0f17"/>
+  <rect x="22" y="22" width="710" height="716" rx="10" fill="#0f141d"/>
+  <rect x="768" y="22" width="410" height="716" rx="10" fill="#0f141d"/>
+
+  <text x="48" y="70" fill="#f8fafc" font-family="Arial, sans-serif" font-size="34" font-weight="700">Administrative Assistant</text>
+  <text x="48" y="102" fill="#98a2b3" font-family="Arial, sans-serif" font-size="14">Describe your situation once. Then use follow-ups for documents, offices, forms, deadlines, or next steps.</text>
+
+  <rect x="48" y="130" width="640" height="54" rx="8" fill="#1b202b"/>
+  <circle cx="74" cy="157" r="14" fill="#f04438"/>
+  <text x="102" y="163" fill="#f8fafc" font-family="Arial, sans-serif" font-size="15">I recently moved from India to Germany and now live in Aalen...</text>
+
+  <rect x="48" y="206" width="640" height="396" rx="8" fill="#111827"/>
+  <circle cx="74" cy="236" r="14" fill="#f59e0b"/>
+  <text x="102" y="242" fill="#f8fafc" font-family="Arial, sans-serif" font-size="24" font-weight="700">Likely Service/Procedure</text>
+  <text x="102" y="276" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">Registering a new address / Registration after relocation</text>
+  <text x="102" y="326" fill="#f8fafc" font-family="Arial, sans-serif" font-size="24" font-weight="700">Required Documents</text>
+  <text x="122" y="364" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">- Valid passport or national identity card</text>
+  <text x="122" y="396" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">- Confirmation of the landlord</text>
+  <text x="122" y="428" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">- Proof of residence</text>
+  <text x="102" y="482" fill="#f8fafc" font-family="Arial, sans-serif" font-size="24" font-weight="700">Steps the User Should Take</text>
+  <text x="122" y="520" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">1. Book an appointment with the responsible office.</text>
+  <text x="122" y="552" fill="#f8fafc" font-family="Arial, sans-serif" font-size="16">2. Prepare documents and submit the application.</text>
+
+  <rect x="48" y="632" width="640" height="58" rx="8" fill="#242936"/>
+  <text x="72" y="667" fill="#98a2b3" font-family="Arial, sans-serif" font-size="15">Ask about your situation, documents, office, form, deadline, or a follow-up.</text>
+
+  <text x="796" y="70" fill="#f8fafc" font-family="Arial, sans-serif" font-size="34" font-weight="700">Case Panel</text>
+  <text x="796" y="102" fill="#98a2b3" font-family="Arial, sans-serif" font-size="14">The panel updates after each assistant response.</text>
+
+  <text x="796" y="142" fill="#f8fafc" font-family="Arial, sans-serif" font-size="14" font-weight="700">Conversation ID</text>
+  <rect x="796" y="154" width="330" height="38" rx="7" fill="#242936"/>
+  <text x="814" y="178" fill="#f8fafc" font-family="Arial, sans-serif" font-size="14">default</text>
+  <rect x="796" y="208" width="330" height="38" rx="7" stroke="#475467"/>
+  <text x="935" y="232" fill="#f8fafc" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">New chat</text>
+
+  <line x1="796" y1="292" x2="1126" y2="292" stroke="#344054"/>
+  <text x="796" y="346" fill="#f8fafc" font-family="Arial, sans-serif" font-size="25" font-weight="700">Current Case</text>
+  <rect x="796" y="368" width="84" height="28" rx="14" fill="#f2f4f7"/>
+  <text x="838" y="387" fill="#344054" font-family="Arial, sans-serif" font-size="13" text-anchor="middle">Route: admin</text>
+  <text x="796" y="432" fill="#f8fafc" font-family="Arial, sans-serif" font-size="15" font-weight="700">Known facts</text>
+  <text x="816" y="466" fill="#f8fafc" font-family="Arial, sans-serif" font-size="15">- moved from India to Germany</text>
+  <text x="816" y="500" fill="#f8fafc" font-family="Arial, sans-serif" font-size="15">- lives in Aalen</text>
+
+  <line x1="796" y1="546" x2="1126" y2="546" stroke="#344054"/>
+  <text x="796" y="602" fill="#f8fafc" font-family="Arial, sans-serif" font-size="25" font-weight="700">Documents</text>
+  <rect x="796" y="620" width="330" height="38" rx="7" stroke="#475467"/>
+  <text x="961" y="644" fill="#f8fafc" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">Valid passport or national identity card</text>
+  <rect x="796" y="672" width="330" height="38" rx="7" stroke="#475467"/>
+  <text x="961" y="696" fill="#f8fafc" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">Confirmation of the landlord</text>
+</svg>
