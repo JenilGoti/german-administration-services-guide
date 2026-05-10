@@ -1,7 +1,7 @@
 from brain.agents.german_admin.schemas import RevisionInput, RevisionOutput
 from brain.llm import Llm
 from config import QUALITY_LLM_PROVIDER
-from brain.prompts import GERMAN_ADMIN_REASONING_SYSTEM, GERMAN_ADMIN_REVISION_PROMPT, json_text
+from brain.prompts import GERMAN_ADMIN_REVISION_SYSTEM, json_text
 
 
 class RevisionAgent:
@@ -10,7 +10,7 @@ class RevisionAgent:
 
     def __init__(self):
         self.llm = Llm(
-            GERMAN_ADMIN_REASONING_SYSTEM,
+            GERMAN_ADMIN_REVISION_SYSTEM,
             role="reasoning",
             provider=QUALITY_LLM_PROVIDER,
         )

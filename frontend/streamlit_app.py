@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any
 
 import streamlit as st
+from dotenv import load_dotenv
 
+load_dotenv()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -20,13 +22,17 @@ from brain.agents.german_admin.graph import GermanAdminGuideAgent
 st.set_page_config(page_title="Administrative Assistant", page_icon="A", layout="wide")
 
 
+def new_conversation_id() -> str:
+    return f"chat-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}"
+
+
 def init_session() -> None:
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "pending_prompt" not in st.session_state:
         st.session_state.pending_prompt = None
     if "conversation_id" not in st.session_state:
-        st.session_state.conversation_id = "default"
+        st.session_state.conversation_id = new_conversation_id()
     if "agent_key" not in st.session_state:
         st.session_state.agent_key = None
     if "agent" not in st.session_state or st.session_state.agent_key != st.session_state.conversation_id:
@@ -250,12 +256,12 @@ def followup_button(label: str, prompt: str, key: str) -> None:
 def render_case_panel(state: dict[str, Any]) -> None:
     new_conv_id = st.text_input("Conversation ID", value=st.session_state.conversation_id)
     if new_conv_id != st.session_state.conversation_id:
-        st.session_state.conversation_id = new_conv_id.strip() or "default"
+        st.session_state.conversation_id = new_conv_id.strip() or new_conversation_id()
         reset_chat()
         st.rerun()
 
     if st.button("New chat", use_container_width=True):
-        st.session_state.conversation_id = f"chat-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        st.session_state.conversation_id = new_conversation_id()
         reset_chat()
         st.rerun()
 

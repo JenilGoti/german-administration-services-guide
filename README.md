@@ -523,10 +523,5 @@ The MCP logs include tool input parameters and trimmed outputs, which helps debu
 - The assistant provides guidance, not legal advice.
 - Official rules, offices, forms, and URLs can change.
 - The quality of answers depends on the quality of scraped Service-BW data and Neo4j embeddings.
-- The current graph DB credentials are configured in `config.py`, not fully externalized.
-- The Streamlit case panel extracts documents from graph findings and falls back to parsing final answer text.
-- Some older compatibility files remain, such as `brain/agents/german_admin_agent.py` and `LLM_V1 = Llm`.
 
-## Project Name
 
-The project name is **German Administrative Assistant**.

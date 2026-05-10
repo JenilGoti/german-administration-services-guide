@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, Iterable, List
 
 from utilities import safe_json_parse
@@ -57,6 +58,45 @@ def target_language(query: str, detected_language: str = None) -> str:
     if is_german_language(detected_language or ""):
         return "German"
     return "English"
+
+
+def clean_assistant_response(response: str) -> str:
+    if not isinstance(response, str):
+        return ""
+
+    text = response.replace("[Your Name]", "").strip()
+    if not text:
+        return ""
+
+    lines = text.splitlines()
+
+    leading_letter_lines = re.compile(
+        r"^\s*(dear\s+(sir\s+or\s+madam|user|applicant|customer)\s*,?|"
+        r"sehr\s+geehrte\s+damen\s+und\s+herren\s*,?)\s*$",
+        re.IGNORECASE,
+    )
+    trailing_signoff_lines = re.compile(
+        r"^\s*(best\s+regards|kind\s+regards|regards|sincerely|yours\s+sincerely|"
+        r"mit\s+freundlichen\s+gr[uü]ßen|freundliche\s+gr[uü]ße|"
+        r"your\s+administrative\s+advisor|your\s+assistant)\s*,?\s*$",
+        re.IGNORECASE,
+    )
+
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and leading_letter_lines.match(lines[0]):
+        lines.pop(0)
+        while lines and not lines[0].strip():
+            lines.pop(0)
+
+    while lines and not lines[-1].strip():
+        lines.pop()
+    while lines and trailing_signoff_lines.match(lines[-1]):
+        lines.pop()
+        while lines and not lines[-1].strip():
+            lines.pop()
+
+    return "\n".join(lines).strip()
 
 
 def clean_retrieval_term(term: str) -> str:

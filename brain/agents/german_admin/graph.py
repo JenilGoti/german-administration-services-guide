@@ -4,6 +4,7 @@ from brain.agents.german_admin.clarification_agent import ClarificationAgent
 from brain.agents.german_admin.direct_response_agent import DirectResponseAgent
 from brain.agents.german_admin.final_response_agent import FinalResponseAgent
 from brain.agents.german_admin.followup_agent import FollowupAgent
+from brain.agents.german_admin.helpers import clean_assistant_response
 from brain.agents.german_admin.intake_agent import IntakeAgent
 from brain.agents.german_admin.knowledge_agent import KnowledgeAgent
 from brain.agents.german_admin.memory_recall_agent import MemoryRecallAgent
@@ -181,6 +182,7 @@ class GermanAdminGuideAgent:
                 "target_language": state.get("target_language", "English"),
             })
 
+        output["response"] = clean_assistant_response(output.get("response", ""))
         self.memory.save_turn(state.get("query", ""), output["response"])
         return {**state, **output}
 

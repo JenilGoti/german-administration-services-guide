@@ -1,16 +1,14 @@
 import os
 from typing import Optional
-from dotenv import load_dotenv
-
-load_dotenv()
-
-GDB_URL = "bolt://localhost:7687"
-GDB_USER = "neo4j"
-GDB_PASSWORD = "Wraith@23"
 
 
-SHORT_TERM_DB = "short-term"
-KNOWLEDGE_DB = "dev-graph"
+GDB_URL = os.getenv("GDB_URL")
+GDB_USER = os.getenv("GDB_USER")
+GDB_PASSWORD = os.getenv("GDB_PASSWORD")
+
+
+SHORT_TERM_DB = os.getenv("SHORT_TERM_DB", "short-term")
+KNOWLEDGE_DB = os.getenv("KNOWLEDGE_DB", "dev-graph")   
 
 # Chat / reasoning LLM provider.
 # Use LLM_PROVIDER=ollama or LLM_PROVIDER=groq.
@@ -90,7 +88,6 @@ def get_chat_model(role: str = "default", provider: Optional[str] = None) -> str
 
     if selected_provider not in models_by_provider:
         raise ValueError(f"Unsupported LLM provider: {selected_provider}")
-
     return models_by_provider[selected_provider].get(
         normalized_role,
         models_by_provider[selected_provider]["default"],

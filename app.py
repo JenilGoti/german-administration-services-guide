@@ -1,5 +1,7 @@
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 os.environ.setdefault("MallocStackLogging", "0")
 os.environ.setdefault("MallocStackLoggingNoCompact", "0")
 

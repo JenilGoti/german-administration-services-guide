@@ -7,3 +7,8 @@ __pycache__
 *.pkl
 
 .vscode
+
+*.tex
+project_report
+data
+logs
