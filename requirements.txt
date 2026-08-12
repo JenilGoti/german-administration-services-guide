@@ -3,6 +3,7 @@ asyncio
 lxml
 playwright
 beautifulsoup4
+python-dotenv
 neo4j
 langgraph
 langchain

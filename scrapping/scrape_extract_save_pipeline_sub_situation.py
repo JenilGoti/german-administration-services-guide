@@ -60,11 +60,10 @@ class SingleSubSituationFlushAgent:
 
     def extract_node(self, state: SingleSubSituationFlushState):
         prompt = self._build_sub_situation_prompt(state["scraped"])
-        # extracted = self.llm.invoke_with_formated_response(
-        #     query=prompt,
-        #     formate=self.output_schema,
-        # )
-        extracted = {}
+        extracted = self.llm.invoke_with_formated_response(
+            query=prompt,
+            formate=self.output_schema,
+        )
 
         return {
             **state,

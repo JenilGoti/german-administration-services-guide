@@ -1,0 +1,16 @@
+{
+  "total": 100,
+  "satisfactory": 97,
+  "unsatisfactory": 3,
+  "satisfactory_rate": 0.97,
+  "average_score": 4.81,
+  "rank_counts": {
+    "excellent": 90,
+    "fail": 3,
+    "good": 7
+  },
+  "status_counts": {
+    "ok": 100
+  },
+  "average_elapsed_seconds": 181.81
+}

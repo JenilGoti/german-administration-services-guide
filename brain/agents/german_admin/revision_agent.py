@@ -1,7 +1,7 @@
 from brain.agents.german_admin.schemas import RevisionInput, RevisionOutput
 from brain.llm import Llm
 from config import QUALITY_LLM_PROVIDER
-from brain.prompts import GERMAN_ADMIN_REVISION_SYSTEM, json_text
+from brain.prompts import GERMAN_ADMIN_REVISION_PROMPT, GERMAN_ADMIN_REVISION_SYSTEM, json_text
 
 
 class RevisionAgent:

@@ -6,10 +6,29 @@ from brain.llm import LLM_V1
 from brain.prompts import ENTITY_EXTRACTION_SYSTEM
 import uuid
 import json
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
     def __init__(self):
+        missing = [
+            name
+            for name, value in {
+                "GDB_URL": GDB_URL,
+                "GDB_USER": GDB_USER,
+                "GDB_PASSWORD": GDB_PASSWORD,
+            }.items()
+            if not value
+        ]
+        if missing:
+            raise ValueError(
+                "Missing Neo4j configuration: "
+                + ", ".join(missing)
+                + ". Set them in the environment or in the project .env file."
+            )
         self.driver = GraphDatabase.driver(GDB_URL, auth=(GDB_USER, GDB_PASSWORD))
     
     def get_session(self, db_name):
@@ -70,7 +89,7 @@ class GraphMemoryIngestor:
                 {"name": "...", "type": "Person|Org|Concept|Other"}
                 ]))
         except Exception as e:
-            print("Error extracting entities", e)
+            logger.warning("Entity extraction failed: %s", e)
             return []
 
     def ingest(self, node_name, node_id, text):
@@ -130,29 +149,28 @@ class GraphMemoryIngestor:
         dimensions=768,
         similarity="cosine",
     ):
-        print("index_name",index_name)
         with self._session() as session:
 
-            # 🔍 Check existing indexes
             result = session.run("SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options")
             
             existing_index = None
             for record in result:
-                print("record",record["name"])
                 if record["name"] == index_name:
                     existing_index = record
                     break
-                    print("existing_index",existing_index)
 
-            # 🚫 If exists → validate
             if existing_index:
                 opts = existing_index.get("options", {}).get("indexConfig", {})
 
                 existing_dim = opts.get("vector.dimensions")
                 existing_sim = opts.get("vector.similarity_function")
-
-                if existing_dim != dimensions or existing_sim != similarity:
-                    print(f"[WARN] Index {index_name} config mismatch. Recreating...")
+                if existing_dim != dimensions or existing_sim.lower() != similarity.lower():
+                    logger.warning(
+                        "Vector index %s config mismatch. Recreating with dimensions=%s similarity=%s.",
+                        index_name,
+                        dimensions,
+                        similarity,
+                    )
 
                     session.run(f"DROP INDEX {index_name} IF EXISTS")
 
@@ -168,11 +186,15 @@ class GraphMemoryIngestor:
                     }}
                     """)
                 else:
-                    print(f"[OK] Index {index_name} already valid")
+                    logger.debug("Vector index %s already valid", index_name)
 
-            # 🆕 If not exists → create
             else:
-                print(f"[CREATE] Creating index {index_name}")
+                logger.info(
+                    "Creating vector index %s with dimensions=%s similarity=%s",
+                    index_name,
+                    dimensions,
+                    similarity,
+                )
 
                 session.run(f"""
                 CREATE VECTOR INDEX {index_name}

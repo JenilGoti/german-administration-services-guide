@@ -20,7 +20,7 @@ class ToolRegistry:
             },
             "search_problem_knowledge": {
                 "args": {"queries": "list[str]", "top_k": "int"},
-                "description": "Search the German public-administration knowledge graph.",
+                "description": "Search the German public-administration knowledge graph across situations, services, and precomputed service Q&A facts.",
                 "tool": self.search_problem_knowledge,
             },
             "service_details": {

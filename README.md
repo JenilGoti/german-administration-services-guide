@@ -1,527 +1,303 @@
 # German Administrative Assistant
 
-German Administrative Assistant is a multi-agent system for helping people understand German public-administration procedures from normal, real-life questions.
+German Administrative Assistant is a multi-agent GraphRAG system for German public-administration guidance. It helps users describe a real-life situation in normal language, maps that situation to German administrative procedures, searches a Neo4j knowledge graph built from Service-BW data, optionally enriches with official web results, and returns practical guidance in the user's language.
 
-Instead of expecting the user to know official German terms like `Wohnsitz anmelden`, `Aufenthaltstitel beantragen`, or `Wohnungsgeberbestätigung`, the assistant accepts a situation in plain language, classifies the problem, searches a Neo4j knowledge graph built from Service-BW data, enriches with official web results when needed, and returns practical guidance in the user's language.
-
-![Frontend preview](docs/images/frontend-preview.svg)
-
-## The Problem
-
-German public administration is procedure-driven. A newcomer often knows their situation but not the official procedure name, responsible authority, required documents, or correct office.
-
-Example:
+The system is designed for questions such as:
 
 ```text
-I recently moved from India to Germany and now live in Aalen.
-Which registration procedure applies to me, which office should I contact,
+In Marxzell 76359, I moved into a new apartment.
+Which registration procedure applies, which office is responsible,
 and what documents do I need?
 ```
 
-A keyword-only chatbot can easily search the wrong thing or force every follow-up through the same heavy workflow. This project solves that by separating intake, retrieval, knowledge search, answer drafting, quality control, memory recall, and follow-up handling into separate agents.
+The assistant is not legal advice. It is a guidance layer that helps users identify likely procedures, required documents, responsible offices, next steps, and useful official sources.
 
-## What The Project Achieves
+![Frontend preview](docs/images/frontend-preview.svg)
 
-- Converts user situations into compact German administrative search queries.
-- Routes each message to the right path: full admin workflow, clarification, small talk, memory recall, or contextual follow-up.
-- Uses a Neo4j graph knowledge base with Service-BW situations, sub-situations, services, requirements, documents, authorities, forms, process steps, legal bases, and related goals/problems.
-- Uses Ollama embeddings for vector search against the knowledge graph.
-- Uses MCP tools for knowledge search, web search, and page scraping.
-- Uses LangGraph for the multi-agent workflow and optional checkpointing.
-- Keeps user/assistant conversation memory separate from LangGraph checkpoint state.
-- Supports Ollama or Groq chat models through one `Llm` wrapper.
-- Provides a Streamlit frontend with a chat panel and a sticky case panel.
-- Lets users click documents in the case panel to ask focused follow-up questions.
+## Documentation
 
-## Real-World Use Cases
+- [Setup Guide](docs/SETUP.md): install, configure, run, build the knowledge base, and run evaluation.
+- [Technologies And Rationale](docs/TECHNOLOGIES.md): which technologies are used and why.
+- [Challenges And Solutions](docs/CHALLENGES.md): problems faced during implementation and how they were solved.
+- [Evaluation Flow](evaluation_flow/README.md): how to run question-based evaluation with a judge agent.
 
-- A worker moves to Germany and needs residence registration or a residence permit.
-- A student needs to understand which authority handles a procedure.
-- A family wants to know which documents to prepare before visiting a German office.
-- A user asks a follow-up like "I already have a rental contract, do I still need the landlord confirmation?"
-- A support team wants first-level administrative guidance before forwarding people to official authorities.
-- A civic-tech project needs a retrieval-backed interface for public services.
+## What The Project Does
 
-The assistant is not legal advice. It is a guidance layer that helps users understand the likely procedure, required documents, next steps, and official sources.
+- Classifies each user message as admin question, clarification, follow-up, memory recall, small talk, or out of scope.
+- Converts plain-language questions into compact German administrative search queries.
+- Searches a Neo4j graph of Service-BW situations, sub-situations, services, requirements, documents, forms, authorities, process steps, legal bases, goals, and dependency problems.
+- Adds an extra `ServiceQA` layer: each service can have precomputed German question-answer facts that are embedded for better retrieval.
+- Uses vector search over `SubSituation`, `Service`, and `ServiceQA` chunks.
+- Expands matching graph nodes into full service details before answer generation.
+- Uses official web search and page scraping when the local graph is not enough.
+- Separates answer drafting, supervision, revision, and final translation into different agents.
+- Provides both a CLI and a Streamlit frontend.
+- Includes a separate evaluation flow that sends many questions through the assistant and grades the answers with a judge LLM.
 
 ## High-Level Architecture
 
-```text
-User
-  |
-  | Streamlit UI or CLI
-  v
-GermanAdminGuideAgent
-  |
-  | LangGraph workflow
-  v
-Intake -> Route -> Admin workflow / Follow-up / Memory recall / Clarification / Direct response
-  |
-  | MCP tools when retrieval is needed
-  v
-Neo4j knowledge graph + web search + scraper
-  |
-  v
-Grounded final answer + saved conversation turn
-```
-
-## Agent Flow
-
 ```mermaid
 flowchart TD
-    A["User message"] --> B["Intake agent"]
-    B --> C{"Route"}
+    U["User"] --> UI["Streamlit UI or CLI"]
+    UI --> G["GermanAdminGuideAgent<br/>LangGraph workflow"]
 
-    C -->|"admin"| D["Retrieval agent"]
-    C -->|"clarify"| E["Clarification agent"]
-    C -->|"small_talk / out_of_scope"| F["Direct response agent"]
-    C -->|"memory_recall"| G["Memory recall agent"]
-    C -->|"followup"| H["Follow-up ReAct agent"]
+    G --> I["Intake agent<br/>route + language + known facts"]
+    I --> R{"Route"}
 
-    D --> I["Planner agent"]
-    I --> J["Knowledge agent"]
-    J --> K["ToolNode"]
-    K --> L["MCP: search_problem_knowledge"]
-    K --> M["MCP: web_search"]
-    K --> N["MCP: scrape"]
-    L --> O["Neo4j KB results"]
-    M --> P["Web results"]
-    N --> Q["Scraped official pages"]
-    O --> R["Solution agent"]
-    P --> R
-    Q --> R
-    R --> S["Supervisor agent"]
-    S --> T{"Needs more search?"}
-    T -->|"yes, max 2 rounds"| J
-    T -->|"no"| U["Revision agent"]
+    R -->|"admin"| RET["Retrieval agent<br/>German KB + web queries"]
+    R -->|"clarify"| CL["Clarification agent"]
+    R -->|"followup"| FU["Follow-up ReAct agent"]
+    R -->|"memory_recall"| MR["Memory recall agent"]
+    R -->|"small_talk / out_of_scope"| DR["Direct response agent"]
 
-    E --> V["Final response agent"]
-    F --> V
-    G --> V
-    H --> V
-    U --> V
-    V --> W["Save user + assistant messages"]
-    W --> X["Return answer in user language"]
+    RET --> PL["Planner agent"]
+    PL --> K["Knowledge agent"]
+    K --> T["ToolNode"]
+
+    T --> KG["MCP: search_problem_knowledge"]
+    T --> WS["MCP: web_search"]
+    T --> SC["MCP: scrape"]
+
+    KG --> NEO["Neo4j GraphRAG KB<br/>SubSituation + Service + ServiceQA"]
+    WS --> WEB["Official web results"]
+    SC --> PAGE["Scraped official pages"]
+
+    NEO --> SOL["Solution agent"]
+    WEB --> SOL
+    PAGE --> SOL
+
+    SOL --> SUP["Supervisor agent"]
+    SUP --> CHECK{"Needs more search?"}
+    CHECK -->|"yes, max 2 rounds"| K
+    CHECK -->|"no"| REV["Revision agent"]
+
+    CL --> FINAL["Final response agent"]
+    FU --> FINAL
+    MR --> FINAL
+    DR --> FINAL
+    REV --> FINAL
+
+    FINAL --> MEM["Save conversation turn"]
+    MEM --> OUT["Answer in user's language"]
 ```
 
-## Knowledge Base Flow
+## Knowledge Base And Retrieval Flow
 
 ```mermaid
 flowchart LR
-    A["Service-BW APIs and pages"] --> B["scrapping/all_links_scrapping.py"]
-    B --> C["scrapping/service_bw_output.json"]
+    A["Service-BW REST APIs"] --> B["all_links_scrapping.py"]
+    B --> C["service_bw_output.json<br/>Situation/SubSituation/Service map"]
+
     C --> D["flush_all_situations_mapping.py"]
     C --> E["flush_sub_situations_from_listing.py"]
     C --> F["flush_services_from_listing.py"]
-    D --> G["Neo4j: Situation/SubSituation/Service graph"]
+
+    D --> G["Neo4j graph<br/>Situation, SubSituation, Service"]
     E --> G
-    F --> G
-    G --> H["GraphMemoryIngestor"]
-    H --> I["Ollama embeddings"]
-    I --> J["Neo4j vector index"]
-    J --> K["MCP search_problem_knowledge"]
-    K --> L["Knowledge agent findings"]
+    F --> H["Service extraction<br/>sections, requirements, forms, authorities, steps, legal basis"]
+    H --> I["LLM ServiceQA generation<br/>4-8 retrieval-focused Q&A facts"]
+    H --> G
+    I --> G
+
+    G --> J["GraphMemoryIngestor"]
+    J --> K["Chunk nodes"]
+    K --> L["Ollama embeddings"]
+    L --> M["Neo4j vector index"]
+
+    M --> N["Vector search<br/>SubSituation + Service + ServiceQA"]
+    N --> O["Service expansion<br/>get_service_details"]
+    O --> P["Knowledge agent findings"]
 ```
+
+### Why ServiceQA Exists
+
+Raw service pages often contain official headings and dense text. Users usually ask in practical question form, for example "Do I still need a Wohnungsgeberbestätigung if I have a rental contract?" The `ServiceQA` layer stores short, grounded question-answer facts for each service and embeds them using the existing chunk pipeline.
+
+The retrieval path is:
+
+```text
+User question
+  -> vector search ServiceQA
+  -> read service_id / HAS_QA relationship
+  -> load full linked Service details
+  -> answer from service details and official web evidence
+```
+
+`ServiceQA` is therefore not a separate final-answer database. It is a retrieval shortcut that helps the assistant find the correct service.
+
+## Service-BW Data Collection
+
+Service-BW is not scraped like a normal static website. The visible pages behave like a web application, so simple HTML scraping does not reliably expose the structured service content. The project therefore uses the Service-BW REST API endpoints behind the site.
+
+Important API patterns used by the project:
+
+```text
+GET https://www.service-bw.de/rest/api/lebenslagen/gruppen
+GET https://www.service-bw.de/rest/api/lebenslagen/{situation_id}
+GET https://www.service-bw.de/rest/api/leistungen/{service_id}
+```
+
+The crawler first reads the life-situation groups, then walks each `lebenslagenbaum`, extracts sub-situations, and collects linked `leistungen` service IDs. Individual service pages are then read through the service API and converted into graph nodes.
+
+More details are documented in [Challenges And Solutions](docs/CHALLENGES.md).
 
 ## Project Structure
 
 ```text
 app.py
-    CLI entry point.
+    CLI chat entry point.
 
 frontend/streamlit_app.py
-    Streamlit app with chat, sticky case panel, active agent status,
+    Streamlit frontend with chat, active-agent status, case panel,
     document follow-up buttons, useful links, and debug state.
 
 brain/agents/german_admin/
-    Main multi-agent implementation. Each agent has its own file and
-    schema in schemas.py. graph.py wires the LangGraph workflow.
+    Multi-agent workflow. graph.py wires the LangGraph state machine.
 
 brain/prompts.py
-    System and task prompts for intake, retrieval, planning, solution,
-    supervision, revision, translation, memory recall, and follow-up.
+    Prompts for intake, retrieval, planning, solution, supervision,
+    revision, translation, service extraction, summaries, and ServiceQA.
 
 brain/llm.py
-    Shared LLM wrapper. Supports Ollama and Groq providers.
+    Shared LLM wrapper for Ollama and Groq.
 
 brain/memory/
-    Conversation memory implementations:
-    SQLite, Postgres, Qdrant class, and memory factory.
+    Conversation memory implementations and factory.
 
 brain/checkpoint.py
-    LangGraph checkpoint factory. Uses in-memory checkpoints by default
-    or PostgresSaver when LANGGRAPH_POSTGRES_URL is configured.
-
-brain/tool_registry.py
-    Converts MCP-backed functions into LangChain StructuredTool objects.
+    LangGraph checkpoint factory.
 
 client/web_client.py
-    MCP stdio client used by the agent tools.
+    MCP stdio client used by agent tools.
 
 server_tools/
-    MCP server exposing web_search, scrape, search_problem_knowledge,
-    and service_details.
+    MCP server exposing search_problem_knowledge, service_details,
+    web_search, and scrape.
 
 server_tools/tools/graph_tools.py
-    Neo4j retrieval layer for vector search, SubSituation matching,
-    service expansion, and service detail retrieval.
+    Neo4j GraphRAG retrieval layer.
 
 graph_db.py
     Neo4j connection manager, chunking, entity extraction, embeddings,
-    and vector Cypher search.
+    vector index handling, and vector Cypher search.
 
 db_schema/services.py
-    Graph writer for situations, services, sections, requirements,
-    documents, authorities, forms, process steps, legal bases, goals,
-    dependencies, and embedding chunks.
+    Graph writer for Service-BW data and ServiceQA.
 
 scrapping/
-    Service-BW crawling, page scraping, extraction, and flush scripts
-    for building the knowledge graph.
+    Service-BW API crawler, page/API scraper, extraction pipelines,
+    flush scripts, and backfill scripts.
 
-logs/
-    Runtime logs and MCP call/result logs.
+evaluation_flow/
+    Separate evaluation runner, question file, judge agent, and results.
+
+docs/
+    Setup, technology rationale, and implementation challenges.
 ```
 
-## Main Runtime Paths
+## Runtime Paths
 
-### 1. Full administrative question
+### Full Administrative Question
 
 ```text
 User -> Intake -> Retrieval -> Planner -> Knowledge -> Solution -> Supervisor -> Revision -> Final
 ```
 
-Used when the user describes a clear German administrative issue.
-
-### 2. Clarification
+### Clarification
 
 ```text
 User -> Intake -> Clarification -> Final
 ```
 
-Used when the user likely needs administrative help but the situation is too unclear to search safely.
+Used only when the administrative domain is too unclear to search safely.
 
-### 3. Follow-up
+### Follow-Up
 
 ```text
 User -> Intake -> Follow-up ReAct agent -> Final
 ```
 
-Used for short contextual questions after a previous answer. The follow-up agent receives prior conversation memory and can use web tools, but it does not rerun the full administrative workflow.
+Used for contextual questions after a previous answer.
 
-### 4. Memory recall
+### Memory Recall
 
 ```text
 User -> Intake -> Memory recall -> Final
 ```
 
-Used when the user asks what was discussed before or asks for the conversation history.
+Used when the user asks what was discussed before.
 
-### 5. Small talk / out of scope
+### Small Talk Or Out Of Scope
 
 ```text
 User -> Intake -> Direct response -> Final
 ```
 
-Used for greetings, thanks, or messages outside German administrative guidance.
+## Main Commands
 
-## State Passed Between Agents
+Install and configure the project using [docs/SETUP.md](docs/SETUP.md).
 
-The graph state is defined in `brain/agents/german_admin/schemas.py`.
-
-Important fields:
-
-- `query`: current user message
-- `route`: selected route from intake
-- `target_language`: language for final response
-- `intake`: problem type, known facts, missing information, search terms
-- `knowledge_query` and `knowledge_queries`: compact German KB situation queries
-- `german_search_terms` and `web_search_terms`: retrieval helper terms
-- `plan`: retrieval strategy
-- `findings`: KB, service detail, web, and scrape findings
-- `draft_answer`: internal German answer
-- `supervisor`: quality-control result
-- `response`: final user-facing answer
-
-The frontend reads the latest graph state through `GermanAdminGuideAgent.get_last_state()` to build the case panel.
-
-## Memory And Checkpoints
-
-The project intentionally separates conversation memory from LangGraph checkpoints.
-
-**Conversation memory**
-
-Used by intake, follow-up, and memory recall. It stores clean user/assistant turns.
-
-Current factory behavior:
-
-- `CONVERSATION_MEMORY_BACKEND=sqlite` uses `SqlConversationMemory`.
-- `CONVERSATION_MEMORY_BACKEND=postgres` uses `PostgresConversationMemory`.
-- `CONVERSATION_MEMORY_BACKEND=auto` uses Postgres if `CONVERSATION_POSTGRES_URL` is set, otherwise SQLite.
-
-**LangGraph checkpoints**
-
-Used to persist graph state. By default the project uses an in-memory saver. If `LANGGRAPH_POSTGRES_URL` is configured, it uses LangGraph `PostgresSaver`.
-
-**Qdrant**
-
-`QdrantConversationMemory` exists as a semantic memory implementation, but it is not the default memory factory path in the current code. It can be integrated later for long-term semantic recall.
-
-## Models
-
-The project uses `brain/llm.py` as the model wrapper.
-
-Supported providers:
-
-- `ollama`
-- `groq`
-
-Configuration is in `config.py`.
-
-The default design keeps embeddings on Ollama:
-
-```text
-OLLAMA_EMBEDDING_MODEL=mxbai-embed-large
-```
-
-This matters because the Neo4j vector index and KB chunks are built with that embedding model. Changing the embedding model requires rebuilding the knowledge base embeddings.
-
-Quality-control agents use `QUALITY_LLM_PROVIDER`, which is useful for using a stronger model for supervisor/revision while keeping other agents local.
-
-## MCP Tools
-
-The MCP server is in `server_tools/__init__.py`.
-
-Available tools:
-
-- `web_search`: uses DuckDuckGo/DDGS search.
-- `scrape`: fetches a URL and extracts readable page text.
-- `search_problem_knowledge`: searches the Neo4j German administration KB.
-- `service_details`: fetches detailed service data from Neo4j.
-
-The agent calls these tools through:
-
-```text
-KnowledgeAgent -> ToolNode -> ToolRegistry -> MCPWebClient -> server_tools
-```
-
-MCP input/output logging is written to:
-
-```text
-logs/mcp.log
-```
-
-## Frontend
-
-The Streamlit frontend is in:
-
-```text
-frontend/streamlit_app.py
-```
-
-It provides:
-
-- chat interface
-- sticky right-side case panel
-- separate scroll areas for chat and case panel
-- active agent status while the LangGraph flow is running
-- known facts from intake
-- document buttons generated from graph findings or final answer parsing
-- useful links from service details and web findings
-- debug state expander
-- conversation id control
-
-Run it with:
+Run the frontend:
 
 ```bash
 streamlit run frontend/streamlit_app.py
 ```
 
-## CLI
-
-Run the terminal chat client with:
+Run the CLI:
 
 ```bash
-python app.py
+python3 app.py
 ```
 
-The CLI uses the same `GermanAdminGuideAgent` as the frontend.
-
-## Installation
-
-Install dependencies:
+Build the Service-BW listing file:
 
 ```bash
-pip install -r requirements.txt
+python3 -m scrapping.all_links_scrapping
 ```
 
-Recommended Ollama models:
+Build/enrich the Neo4j knowledge graph:
 
 ```bash
-ollama pull mxbai-embed-large
-ollama pull qwen2.5-coder:7b
-ollama pull aya:8b
-ollama pull llama3.1:latest
+python3 -m scrapping.flush_all_situations_mapping
+python3 -m scrapping.flush_sub_situations_from_listing
+python3 -m scrapping.flush_services_from_listing
 ```
 
-If using Groq, set `GROQ_API_KEY`.
-
-## Environment Example
-
-Create `.env` in the project root:
-
-```env
-LLM_PROVIDER=ollama
-QUALITY_LLM_PROVIDER=groq
-GROQ_API_KEY=
-
-OLLAMA_DEFAULT_MODEL=qwen2.5-coder:7b
-OLLAMA_TRANSLATION_MODEL=aya:8b
-OLLAMA_REASONING_MODEL=qwen2.5:7b-instruct
-OLLAMA_STRUCTURED_MODEL=llama3.1:latest
-OLLAMA_SUPERVISOR_MODEL=llama3.1:latest
-
-GROQ_DEFAULT_MODEL=llama-3.3-70b-versatile
-GROQ_SUPERVISOR_MODEL=llama-3.3-70b-versatile
-
-OLLAMA_EMBEDDING_MODEL=mxbai-embed-large
-
-SQL_MEMORY_ENABLED=true
-SQL_MEMORY_PATH=data/memory.sqlite3
-SQL_MEMORY_RECENT_LIMIT=12
-
-CONVERSATION_MEMORY_BACKEND=auto
-CONVERSATION_POSTGRES_URL=
-
-LANGGRAPH_POSTGRES_URL=
-LANGGRAPH_POSTGRES_SETUP=true
-
-MCP_LOG_MAX_CHARS=12000
-```
-
-Neo4j connection constants currently live in `config.py`:
-
-```text
-GDB_URL
-GDB_USER
-GDB_PASSWORD
-KNOWLEDGE_DB
-```
-
-For production use, move these to environment variables before sharing or deploying.
-
-## Knowledge Base Setup
-
-The project builds a Neo4j knowledge graph from Service-BW data.
-
-### Crawl Service-BW situation/service listings
+Backfill ServiceQA for existing services:
 
 ```bash
-python -m scrapping.all_links_scrapping
+python3 scrapping/backfill_service_qa.py
 ```
 
-Output:
-
-```text
-scrapping/service_bw_output.json
-```
-
-### Insert situation, sub-situation, and service relationships
+Run a small evaluation:
 
 ```bash
-python -m scrapping.flush_all_situations_mapping
+python3 evaluation_flow/run_evaluation.py --limit 10
 ```
 
-### Enrich sub-situation nodes
+## Evaluation
 
-```bash
-python -m scrapping.flush_sub_situations_from_listing
-```
+The evaluation flow is intentionally separated from the main application. It reads one question per line from [evaluation_flow/questions.txt](evaluation_flow/questions.txt), sends each question through the assistant, and asks a judge LLM to score the answer.
 
-### Enrich service nodes and service details
-
-```bash
-python -m scrapping.flush_services_from_listing
-```
-
-The convenience entry point is:
-
-```bash
-python scraping_app.py
-```
-
-At the moment `scraping_app.py` calls `flush_all_situations_mapping()` by default. Edit that file to switch on the other flush steps.
-
-## Testing Prompt Series
-
-Use this sequence in the frontend or CLI:
+Outputs are stored under:
 
 ```text
-Hi
+evaluation_flow/results/
 ```
 
-```text
-I recently moved from India to Germany and now live in Aalen. I need guidance about official documentation. Which registration procedure applies to me, which office should I contact, and what documents do I need?
-```
+Each run produces:
 
-```text
-Help me understand Wohnungsgeberbestätigung for this case.
-```
+- `results.jsonl`: full per-question details.
+- `results.csv`: spreadsheet-friendly results.
+- `summary.json`: aggregate score, rank counts, and satisfactory rate.
 
-```text
-I already have a rental contract. Do I still need the landlord confirmation?
-```
-
-```text
-Which office should I visit in Aalen?
-```
-
-```text
-What was my original situation?
-```
-
-```text
-Thank you for your help.
-```
-
-```text
-I want to apply for a residence permit for employment in Aalen.
-```
-
-```text
-Yes, I have a job contract.
-```
-
-```text
-Which documents are still missing?
-```
-
-```text
-Help me understand health insurance proof for this case.
-```
-
-This tests small talk, full administrative routing, KB retrieval, document follow-up, memory recall, contextual follow-up, and whether short follow-up messages avoid the full workflow.
-
-## Logs
-
-Runtime logs:
-
-```text
-logs/agent.log
-```
-
-MCP tool call logs:
-
-```text
-logs/mcp.log
-```
-
-The MCP logs include tool input parameters and trimmed outputs, which helps debug whether the KB search received useful situation phrases instead of full user paragraphs.
+The current question set is focused on real Service-BW procedure names and local context such as `Marxzell 76359`, so it tests the system against services that should exist in the knowledge base.
 
 ## Current Limitations
 
-- The assistant provides guidance, not legal advice.
-- Official rules, offices, forms, and URLs can change.
-- The quality of answers depends on the quality of scraped Service-BW data and Neo4j embeddings.
-
-
+- The assistant provides administrative guidance, not legal advice.
+- Official rules, forms, fees, and responsible offices can change.
+- Retrieval quality depends on the completeness and freshness of the Neo4j graph.
+- Service-BW pages can contain regionalized content; local details may require web fallback.
+- `ServiceQA` improves matching but final answers must still be grounded in linked service details and official sources.
+- The judge agent is useful for evaluation, but its score should be manually reviewed for important thesis results.

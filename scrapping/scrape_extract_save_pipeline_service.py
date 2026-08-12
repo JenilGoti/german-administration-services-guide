@@ -134,6 +134,18 @@ class SingleServiceFlushAgent:
                 "document_id": "string",
             }
         ],
+        "service_qa": [
+            {
+                "id": "string (service_id + '_qa_' + order)",
+                "service_id": "string",
+                "category": "overview|eligibility|documents|authority|forms|costs|deadlines|process|legal_basis|local_context|dependency|missing_information",
+                "question": "string",
+                "answer": "string",
+                "sourceText": "string",
+                "confidence": 0.0,
+                "order": 0,
+            }
+        ],
         "derive_dependencies": True,
     }
 
@@ -268,6 +280,28 @@ class SingleServiceFlushAgent:
                     }
                 )
 
+        service_qa = []
+        for index, item in enumerate(payload.get("service_qa", []) or [], start=1):
+            question = str(item.get("question", "")).strip()
+            answer = str(item.get("answer", "")).strip()
+            if not question or not answer:
+                continue
+
+            order = item.get("order") or index
+            service_qa.append(
+                {
+                    **item,
+                    "id": item.get("id") or f"{service_id}_qa_{order}",
+                    "service_id": service_id,
+                    "category": item.get("category") or "overview",
+                    "question": question,
+                    "answer": answer,
+                    "sourceText": item.get("sourceText", ""),
+                    "confidence": item.get("confidence", 0.8),
+                    "order": order,
+                }
+            )
+
         return {
             "situations": [],
             "services": normalized_services,
@@ -280,6 +314,7 @@ class SingleServiceFlushAgent:
             "legal_basis": force_service_id(payload.get("legal_basis", [])),
             "goals": force_service_id(payload.get("goals", [])),
             "dependency_problems": force_service_id(payload.get("dependency_problems", [])),
+            "service_qa": service_qa,
             "derive_dependencies": payload.get("derive_dependencies", True),
         }
 

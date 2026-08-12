@@ -133,6 +133,9 @@ Classify the message first:
 
 Only "admin" should continue to retrieval and tools.
 For non-admin routes, do not answer from the intake agent.
+Prefer "admin" when the user asks about a recognizable German administrative procedure, required documents, responsible office, appointment, certificate, permit, registration, benefit, vehicle, licence, business, tax, or civil-status process.
+Missing city, exact address, nationality, document status, or appointment date should usually be recorded as missing_information, but should not block retrieval when the administrative topic is clear.
+Use "clarify" only when the administrative domain itself is unclear and no useful search query can be formed safely.
 
 {conversation_memory}
 
@@ -144,11 +147,12 @@ If the current message is short but clearly answers or continues the previous as
 If the current query depends on prior context and the prior messages do not contain a clear situation, route to "clarify".
 If the current query is a follow-up to the previous administrative answer, route to "followup".
 If the user describes a new standalone administrative situation or asks for the official procedure for a specific item, route to "admin".
+If the user asks "which documents", "which office", "which procedure", "what should I do", or "how can I apply" for a recognizable German administrative topic, route to "admin" and let later agents ask focused follow-up questions if needed.
 If the user only greets or says thanks, route to "small_talk".
 If the user asks about previous conversation or asks what you discussed, route to "memory_recall".
 If route is "admin", search_terms must contain useful German administrative search phrases.
 
-Return only JSON with the schema, only return copiable snippet nothing elce:
+Return only JSON with the schema:
 {{
   "problem_type": "short German/English category",
   "detected_language": "In which language is the Current user message written?",
@@ -218,7 +222,7 @@ Create retrieval inputs for a German public-service knowledge base.
 Do not include greetings, the user's name, or polite filler.
 Keep city names, document names, dates, and IDs unchanged.
 Prefer official German administrative words for the specific problem. Examples: "Wohnsitz anmelden", "Aufenthaltstitel beantragen", "Führerschein umschreiben", "Gewerbe anmelden", "Kindergeld beantragen", "Steuerliche Identifikationsnummer", "Kfz-Zulassung".
-The knowledge base stores situations/sub-situations, so the knowledge query must describe the user's administrative situation, not the whole user message.
+The knowledge base stores situations/sub-situations, services, and precomputed service Q&A facts. The knowledge query must describe the user's administrative situation and the likely citizen question, not the whole user message.
 Use compact situation phrases. Do not copy the full question.
 Use the examples only as style guidance across different administrative areas:
 - "Zuzug aus dem Ausland"
@@ -251,7 +255,7 @@ Return only JSON:
 
 GERMAN_ADMIN_PLANNER_PROMPT = """
 Create a short retrieval plan for this German administrative problem.
-The system will vector search SubSituation nodes using compact German situation queries, then follow graph relationships from matching sub-situations to services and service details.
+The system will vector search SubSituation nodes, Service nodes, and ServiceQA nodes using compact German situation queries. It will then follow graph relationships from matching sub-situations or Q&A facts to services and service details.
 
 Knowledge-base situation query:
 {knowledge_query}
@@ -295,6 +299,7 @@ Write the internal answer in German. Keep official German procedure names and do
 
 Quality rules:
 - Do not include internal tool calls, tool results, JSON traces, or debug text in the final answer.
+- Treat ServiceQA findings as retrieval evidence for the linked service. Use the linked service details as the main grounding source.
 - Do not write the answer as a letter. Do not include salutations, sign-offs, or placeholders such as "Dear Sir or Madam", "Best regards", "Kind regards", or "[Your Name]".
 - Only include URLs that appear in the database findings or web findings. Do not invent city, BAMF, service-bw, or form links.
 - Choose the procedure from the findings and the user's problem. Do not force residence registration if the user asks about another administrative area.
@@ -387,6 +392,30 @@ Do not include markdown.
 Do not invent facts that are not supported by the page text.
 """
 
+SUB_SITUATION_SUMMARY_SYSTEM = """
+You are an expert German public-administration summarizer.
+Write concise German summaries for Service-BW sub-situations.
+Do not invent facts that are not supported by the supplied text.
+Return only valid JSON.
+Do not include markdown.
+"""
+
+SERVICE_SUMMARY_SYSTEM = """
+You are an expert German public-administration summarizer.
+Write detailed German summaries for Service-BW services using only the supplied service facts.
+Do not invent facts that are not supported by the supplied text.
+Return only valid JSON.
+Do not include markdown.
+"""
+
+SERVICE_QA_SYSTEM = """
+You are an expert German public-administration knowledge-base analyst.
+Create retrieval-focused German question-answer facts for Service-BW services using only supplied service facts.
+Do not invent facts that are not supported by the supplied text.
+Return only valid JSON.
+Do not include markdown.
+"""
+
 SERVICE_EXTRACT_SYSTEM = """
 You are an expert German public-administration data extraction system.
 Extract structured data for one Service-BW service page only.
@@ -433,13 +462,71 @@ Rules:
 - For every legal_basis item, service_id MUST be "{source_id}".
 - For every goals item, service_id MUST be "{source_id}".
 - For every dependency_problems item, service_id MUST be "{source_id}" if the problem involves this service.
+- For every service_qa item, service_id MUST be "{source_id}".
 - Use the known scraper data when available.
 - Extract requirements from prerequisites, required documents, deadlines, costs, and procedure text.
 - If a requirement is a document, fill the document fields.
 - Use document_issuers only if the page clearly says this service issues a document.
 - Use goals only when the page clearly supports a user goal achieved by this service.
 - Use dependency_problems only when the page clearly shows a dependency issue, missing source, dead end, or ambiguity.
+- Create 4 to 8 service_qa items that are useful for later retrieval.
+- service_qa questions and answers MUST be written in German.
+- service_qa should cover important user questions when supported by the page: purpose, eligibility, required documents, authority, forms, costs, deadlines, process steps, legal basis, location-specific notes, and follow-up dependencies.
+- Keep each service_qa answer short, factual, and grounded in sourceText.
+- Do not create service_qa items for unknown facts.
 - If unknown, use empty string, null, false, or empty list.
+"""
+
+SUB_SITUATION_SUMMARY_PROMPT = """
+Create a concise German summary for this Service-BW sub-situation.
+
+Name:
+{name}
+
+Description:
+{description}
+
+Rules:
+- Use only the supplied name and description.
+- Write 2-4 short sentences in German.
+- Focus on what the sub-situation is about and when it is relevant for a citizen.
+- Keep the text useful for semantic retrieval and user matching.
+- If the description is empty, return an empty summary.
+"""
+
+SERVICE_SUMMARY_PROMPT = """
+Create a detailed German summary for this Service-BW service.
+
+Service context:
+{context_json}
+
+Rules:
+- Use only the supplied service context.
+- Write one coherent, detailed German summary in about 6-10 sentences.
+- Explain what the service is for, who it is relevant for, important requirements, required or issued documents, responsible authorities, forms, process steps, legal basis, goals, and known dependency problems when those facts are present.
+- Prefer practical meaning over field-by-field repetition.
+- Mention only facts that are present in the supplied context.
+- Do not mention graph structure, node labels, chunks, embeddings, ids, or missing fields.
+- If some categories are empty, simply omit them.
+"""
+
+SERVICE_QA_PROMPT = """
+Create retrieval-focused German question-answer facts for this Service-BW service.
+
+Service context:
+{context_json}
+
+Rules:
+- Use only the supplied service context.
+- Create 4 to 8 question-answer items when enough facts are available.
+- Write questions and answers in German.
+- Questions should sound like realistic citizen questions.
+- Answers must be short, factual, and grounded in the supplied context.
+- Prefer important administrative questions: purpose, eligibility, required documents, authority, forms, costs, deadlines, process steps, legal basis, local responsibility, and follow-up dependencies.
+- Each item must include category, question, answer, sourceText, confidence, and order.
+- category must be one of: overview, eligibility, documents, authority, forms, costs, deadlines, process, legal_basis, local_context, dependency, missing_information.
+- sourceText should be the shortest supporting text from the supplied context.
+- Do not invent facts and do not include items for unknown facts.
 """
 
 
@@ -462,6 +549,25 @@ def build_sub_situation_extract_prompt(scraped: Dict[str, Any]) -> str:
     return SUB_SITUATION_EXTRACT_PROMPT.format(
         context_json=json_text(context, indent=2),
         source_id=scraped.get("sourceId", ""),
+    )
+
+
+def build_sub_situation_summary_prompt(name: str, description: str) -> str:
+    return SUB_SITUATION_SUMMARY_PROMPT.format(
+        name=name or "",
+        description=description or "",
+    )
+
+
+def build_service_summary_prompt(context: Dict[str, Any]) -> str:
+    return SERVICE_SUMMARY_PROMPT.format(
+        context_json=json_text(context, indent=2),
+    )
+
+
+def build_service_qa_prompt(context: Dict[str, Any]) -> str:
+    return SERVICE_QA_PROMPT.format(
+        context_json=json_text(context, indent=2),
     )
 
 

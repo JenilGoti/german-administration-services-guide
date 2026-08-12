@@ -17,6 +17,7 @@ SEARCHABLE_NODE_LABELS = [
     "LegalBasis",
     "Goal",
     "DependencyProblem",
+    "ServiceQA",
 ]
 
 DEFAULT_ADMIN_SEARCH_LABELS = ["SubSituation"]
@@ -107,9 +108,11 @@ class GermanAdminGraphTools:
     def search_problem_knowledge(self, queries: List[str], top_k: int = 3) -> Dict[str, Any]:
         sub_situations = []
         services = []
+        service_qa = []
         service_details_by_id = {}
         seen_sub_situations = set()
         seen_services = set()
+        seen_service_qa = set()
         query_tokens = self._tokens(" ".join(queries))
 
         for query in queries:
@@ -127,6 +130,12 @@ class GermanAdminGraphTools:
                 if service_id and service_id not in seen_services:
                     seen_services.add(service_id)
                     services.append(service)
+
+            for qa in self.vector_search(query, "ServiceQA", top_k=top_k):
+                qa_id = qa.get("id")
+                if qa_id and qa_id not in seen_service_qa:
+                    seen_service_qa.add(qa_id)
+                    service_qa.append(qa)
 
         sub_situation_ids = [item["id"] for item in sub_situations if item.get("id")]
         for detail in self.find_services_for_sub_situations(sub_situation_ids):
@@ -157,6 +166,22 @@ class GermanAdminGraphTools:
                     base_score=10.0 + float(service.get("score", 0) or 0)
                 )
 
+        for qa in service_qa:
+            service_id = qa.get("service_id")
+            if not service_id:
+                continue
+            detail = self.get_service_details(service_id)
+            detail_id = detail.get("service", {}).get("id")
+            if detail_id:
+                self._add_ranked_service_detail(
+                    service_details_by_id,
+                    detail_id,
+                    detail,
+                    query_tokens,
+                    reason="service_qa_vector_match",
+                    base_score=8.0 + float(qa.get("score", 0) or 0)
+                )
+
         service_details = sorted(
             service_details_by_id.values(),
             key=lambda item: item.get("retrieval_score", 0),
@@ -166,6 +191,7 @@ class GermanAdminGraphTools:
         return {
             "SubSituation": sub_situations,
             "Service": services,
+            "ServiceQA": service_qa,
             "services": service_details,
         }
 
@@ -199,6 +225,7 @@ class GermanAdminGraphTools:
         requirements = detail.get("requirements", [])
         documents = detail.get("documents", [])
         steps = detail.get("steps", [])
+        service_qa = detail.get("service_qa", [])
 
         parts = [
             service.get("name", ""),
@@ -209,6 +236,7 @@ class GermanAdminGraphTools:
         parts.extend(requirement.get("text", "") for requirement in requirements)
         parts.extend(document.get("name", "") + " " + document.get("description", "") for document in documents)
         parts.extend(step.get("title", "") + " " + step.get("description", "") for step in steps)
+        parts.extend(qa.get("question", "") + " " + qa.get("answer", "") for qa in service_qa)
         return " ".join(parts)
 
     def _tokens(self, text: str) -> set:
@@ -245,6 +273,7 @@ class GermanAdminGraphTools:
             OPTIONAL MATCH (goal:Goal)-[:ACHIEVED_BY]->(svc)
             OPTIONAL MATCH (svc)-[:DEPENDS_ON]->(dependency:Service)
             OPTIONAL MATCH (svc)-[:HAS_PROBLEM]->(problem:DependencyProblem)
+            OPTIONAL MATCH (svc)-[:HAS_QA]->(qa:ServiceQA)
 
             RETURN
                 svc,
@@ -257,7 +286,8 @@ class GermanAdminGraphTools:
                 collect(DISTINCT legal) AS legal_basis,
                 collect(DISTINCT goal) AS goals,
                 collect(DISTINCT dependency) AS dependencies,
-                collect(DISTINCT problem) AS problems
+                collect(DISTINCT problem) AS problems,
+                collect(DISTINCT qa) AS service_qa
             """, {"service_id": service_id})
 
             record = result.single()
@@ -277,6 +307,7 @@ class GermanAdminGraphTools:
                 "goals": [dict(item) for item in record["goals"] if item],
                 "dependencies": [dict(item) for item in record["dependencies"] if item],
                 "problems": [dict(item) for item in record["problems"] if item],
+                "service_qa": [dict(item) for item in record["service_qa"] if item],
             }
 
     def get_related_services(self, node_name: str, node_id: str, limit: int = 5) -> List[Dict[str, Any]]:

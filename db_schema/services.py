@@ -6,14 +6,19 @@ from config import KNOWLEDGE_DB
 
 
 class ServiceBWGraphWriter:
-    def __init__(self, db_manager, db_name=KNOWLEDGE_DB, enable_embeddings=True):
+    def __init__(self, db_manager, db_name=KNOWLEDGE_DB, enable_embeddings=True, verbose=False):
         self.db = db_manager
         self.db_name = db_name
         self.enable_embeddings = enable_embeddings
+        self.verbose = verbose
         self.ingestor = GraphMemoryIngestor(db_name) if enable_embeddings else None
 
     def _session(self):
         return self.db.get_session(self.db_name)
+
+    def _log(self, message: str):
+        if self.verbose:
+            print(message)
 
     def _safe_list(self, value):
         return value if isinstance(value, list) else []
@@ -67,6 +72,7 @@ class ServiceBWGraphWriter:
             "CREATE CONSTRAINT legal_basis_id IF NOT EXISTS FOR (n:LegalBasis) REQUIRE n.id IS UNIQUE",
             "CREATE CONSTRAINT goal_id IF NOT EXISTS FOR (n:Goal) REQUIRE n.id IS UNIQUE",
             "CREATE CONSTRAINT dependency_problem_id IF NOT EXISTS FOR (n:DependencyProblem) REQUIRE n.id IS UNIQUE",
+            "CREATE CONSTRAINT service_qa_id IF NOT EXISTS FOR (n:ServiceQA) REQUIRE n.id IS UNIQUE",
         ]
 
         with self._session() as session:
@@ -272,6 +278,7 @@ class ServiceBWGraphWriter:
                 "name": s.get("name", ""),
                 "url": s.get("url", ""),
                 "description": s.get("description", ""),
+                "summary": s.get("summary", ""),
                 "source": s.get("source", "service-bw"),
                 "regionalisierbar": s.get("regionalisierbar"),
                 "scrapedAt": s.get("scrapedAt", datetime.utcnow().isoformat()),
@@ -290,6 +297,7 @@ class ServiceBWGraphWriter:
             SET svc.name = row.name,
                 svc.url = row.url,
                 svc.description = row.description,
+                svc.summary = row.summary,
                 svc.source = row.source,
                 svc.regionalisierbar = row.regionalisierbar,
                 svc.scrapedAt = row.scrapedAt
@@ -298,7 +306,15 @@ class ServiceBWGraphWriter:
         chunks = self._embed_unique_rows(
             "Service",
             rows,
-            lambda r: f"{r.get('name', '')}\n{r.get('description', '')}"
+            lambda r: "\n".join(
+                part
+                for part in [
+                    r.get("name", ""),
+                    r.get("summary", ""),
+                    r.get("description", ""),
+                ]
+                if part
+            )
         )
 
         return {"services": len(rows), "service_chunks": chunks}
@@ -653,6 +669,69 @@ class ServiceBWGraphWriter:
         }
 
     # ------------------------
+    # SERVICE Q&A FACTS
+    # ------------------------
+    def insert_service_qa(self, service_qa: List[Dict[str, Any]]):
+        rows = []
+        for index, item in enumerate(self._safe_list(service_qa), start=1):
+            service_id = str(item.get("service_id", ""))
+            question = str(item.get("question", "")).strip()
+            answer = str(item.get("answer", "")).strip()
+            if not service_id or not question or not answer:
+                continue
+
+            order = item.get("order") or index
+            rows.append({
+                "id": str(item.get("id") or f"{service_id}_qa_{order}"),
+                "service_id": service_id,
+                "category": item.get("category", "overview"),
+                "question": question,
+                "answer": answer,
+                "sourceText": item.get("sourceText", ""),
+                "confidence": item.get("confidence", 0.8),
+                "order": order,
+                "scrapedAt": item.get("scrapedAt", datetime.utcnow().isoformat()),
+            })
+
+        if not rows:
+            return {"service_qa": 0, "service_qa_chunks": 0}
+
+        with self._session() as session:
+            session.run("""
+            UNWIND $rows AS row
+
+            MERGE (qa:ServiceQA {id: row.id})
+            SET qa.service_id = row.service_id,
+                qa.category = row.category,
+                qa.question = row.question,
+                qa.answer = row.answer,
+                qa.sourceText = row.sourceText,
+                qa.confidence = row.confidence,
+                qa.order = row.order,
+                qa.scrapedAt = row.scrapedAt
+
+            MERGE (svc:Service {id: row.service_id})
+            MERGE (svc)-[:HAS_QA]->(qa)
+            """, {"rows": rows})
+
+        chunks = self._embed_unique_rows(
+            "ServiceQA",
+            rows,
+            lambda r: "\n".join(
+                part
+                for part in [
+                    r.get("category", ""),
+                    r.get("question", ""),
+                    r.get("answer", ""),
+                    r.get("sourceText", ""),
+                ]
+                if part
+            )
+        )
+
+        return {"service_qa": len(rows), "service_qa_chunks": chunks}
+
+    # ------------------------
     # DERIVE DEPENDS_ON
     # ------------------------
     def derive_service_dependencies(self):
@@ -673,42 +752,45 @@ class ServiceBWGraphWriter:
         result = {}
         if payload.get("situations", []):
             result.update(self.insert_situation_tree(payload.get("situations", [])))
-            print("inserted situations")
+            self._log("inserted situations")
         if payload.get("sub_situations", []):
             result.update(self.insert_sub_situation_details(payload.get("sub_situations", [])))
-            print("inserted sub situations")
+            self._log("inserted sub situations")
         if payload.get("services", []):
             result.update(self.insert_services(payload.get("services", [])))
-            print("inserted services")
+            self._log("inserted services")
         if payload.get("service_sections", []):
             result.update(self.insert_service_sections(payload.get("service_sections", [])))
-            print("inserted service sections")
+            self._log("inserted service sections")
         if payload.get("requirements", []):
             result.update(self.insert_requirements(payload.get("requirements", [])))
-            print("inserted requirements")
+            self._log("inserted requirements")
         if payload.get("document_issuers", []):
             result.update(self.insert_document_issuers(payload.get("document_issuers", [])))
-            print("inserted document issuers")
+            self._log("inserted document issuers")
         if payload.get("authorities", []):
             result.update(self.insert_authorities(payload.get("authorities", [])))
-            print("inserted authorities")
+            self._log("inserted authorities")
         if payload.get("forms", []):
             result.update(self.insert_forms(payload.get("forms", [])))
-            print("inserted forms")
+            self._log("inserted forms")
         if payload.get("process_steps", []):
             result.update(self.insert_process_steps(payload.get("process_steps", [])))
-            print("inserted process steps")
+            self._log("inserted process steps")
         if payload.get("legal_basis", []):
             result.update(self.insert_legal_basis(payload.get("legal_basis", [])))
-            print("inserted legal basis")
+            self._log("inserted legal basis")
         if payload.get("goals", []):
             result.update(self.insert_goals(payload.get("goals", [])))
-            print("inserted goals")
+            self._log("inserted goals")
         if payload.get("dependency_problems", []):
             result.update(self.insert_dependency_problems(payload.get("dependency_problems", [])))
-            print("inserted dependency problems")
+            self._log("inserted dependency problems")
+        if payload.get("service_qa", []):
+            result.update(self.insert_service_qa(payload.get("service_qa", [])))
+            self._log("inserted service qa")
         if payload.get("derive_dependencies", True):
             result.update(self.derive_service_dependencies())
-            print("derived dependencies")
+            self._log("derived dependencies")
 
         return result

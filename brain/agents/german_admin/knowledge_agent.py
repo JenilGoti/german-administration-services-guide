@@ -40,10 +40,11 @@ class KnowledgeAgent:
                 "knowledge_query": query,
                 "search_terms": search_terms,
                 "web_search_terms": data.get("web_search_terms", []),
-                "search_strategy": "Compact German situation queries -> SubSituation vector search + Service vector fallback -> service details -> web fallback when needed.",
+                "search_strategy": "Compact German situation queries -> SubSituation vector search + Service vector fallback + ServiceQA vector search -> service details -> web fallback when needed.",
                 "search_results": {
                     "SubSituation": self._trim_items(graph_search.get("SubSituation", []), limit=3),
                     "Service": self._trim_items(graph_search.get("Service", []), limit=3),
+                    "ServiceQA": self._trim_items(graph_search.get("ServiceQA", []), limit=4),
                 },
                 "service_details": self._trim_items(graph_search.get("services", []), limit=3),
                 "web_findings": self._trim_web_findings(web_findings),
@@ -75,6 +76,7 @@ class KnowledgeAgent:
                 "status": "success",
                 "sub_situation_count": len(graph_search.get("SubSituation", [])),
                 "service_vector_count": len(graph_search.get("Service", [])),
+                "service_qa_count": len(graph_search.get("ServiceQA", [])),
                 "service_count": len(graph_search.get("services", [])),
             })
             return graph_search
@@ -86,7 +88,7 @@ class KnowledgeAgent:
                 "error": str(exc),
             }
             self._log_tool("[TOOL_ERROR]", error)
-            return {"SubSituation": [], "Service": [], "services": [], "error": error}
+            return {"SubSituation": [], "Service": [], "ServiceQA": [], "services": [], "error": error}
 
     def _web_enrichment(self, data: KnowledgeInput, search_terms: list[str], graph_search: Dict[str, Any]):
         service_count = len(graph_search.get("services", []))

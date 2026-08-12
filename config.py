@@ -1,6 +1,13 @@
 import os
 from typing import Optional
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 
 GDB_URL = os.getenv("GDB_URL")
 GDB_USER = os.getenv("GDB_USER")
@@ -26,11 +33,12 @@ OLLAMA_STRUCTURED_MODEL = os.getenv("OLLAMA_STRUCTURED_MODEL", "llama3.1:latest"
 OLLAMA_SUPERVISOR_MODEL = os.getenv("OLLAMA_SUPERVISOR_MODEL", "llama3.1:latest")
 
 # Groq chat models. Requires GROQ_API_KEY in the environment.
-GROQ_DEFAULT_MODEL = os.getenv("GROQ_DEFAULT_MODEL", "llama-3.3-70b-versatile")
+GROQ_DEFAULT_MODEL = os.getenv("GROQ_DEFAULT_MODEL", "meta-llama/llama-prompt-guard-2-86m")
 GROQ_TRANSLATION_MODEL = os.getenv("GROQ_TRANSLATION_MODEL", GROQ_DEFAULT_MODEL)
 GROQ_REASONING_MODEL = os.getenv("GROQ_REASONING_MODEL", GROQ_DEFAULT_MODEL)
 GROQ_STRUCTURED_MODEL = os.getenv("GROQ_STRUCTURED_MODEL", GROQ_DEFAULT_MODEL)
 GROQ_SUPERVISOR_MODEL = os.getenv("GROQ_SUPERVISOR_MODEL", GROQ_DEFAULT_MODEL)
+GROQ_JUDGE_MODEL = os.getenv("GROQ_JUDGE_MODEL", GROQ_DEFAULT_MODEL)
 
 # Keep embeddings on Ollama. Existing KB vectors were created with this model,
 # so changing it would make vector search inconsistent until the KB is re-embedded.
@@ -76,6 +84,7 @@ def get_chat_model(role: str = "default", provider: Optional[str] = None) -> str
             "reasoning": OLLAMA_REASONING_MODEL,
             "structured": OLLAMA_STRUCTURED_MODEL,
             "supervisor": OLLAMA_SUPERVISOR_MODEL,
+            "judge": OLLAMA_STRUCTURED_MODEL,
         },
         "groq": {
             "default": GROQ_DEFAULT_MODEL,
@@ -83,6 +92,7 @@ def get_chat_model(role: str = "default", provider: Optional[str] = None) -> str
             "reasoning": GROQ_REASONING_MODEL,
             "structured": GROQ_STRUCTURED_MODEL,
             "supervisor": GROQ_SUPERVISOR_MODEL,
+            "judge": GROQ_JUDGE_MODEL,
         },
     }
 

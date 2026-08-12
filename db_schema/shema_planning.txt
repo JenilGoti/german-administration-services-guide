@@ -2,7 +2,7 @@ NODES
 
 (:Situation {id, name, url})
 (:SubSituation {id, name, url, description, summary, scrapedAt, isSelf})
-(:Service {id, name, url, description, source, regionalisierbar, scrapedAt})
+(:Service {id, name, url, description, summary, source, regionalisierbar, scrapedAt})
 (:ServiceSection {id, type, title, text, html, order})
 (:Requirement {id, text, type, mandatory, confidence, sourceText})
 (:Document {id, name, normalizedName, description, language})
@@ -12,6 +12,7 @@ NODES
 (:LegalBasis {id, title, lawCode, paragraph, url, text})
 (:Goal {id, name, description})
 (:DependencyProblem {id, type, description, severity, detectedAt})
+(:ServiceQA {id, service_id, category, question, answer, sourceText, confidence, order, scrapedAt})
 
 RELATIONSHIPS
 
@@ -30,5 +31,6 @@ RELATIONSHIPS
 (:Service)-[:HAS_STEP]->(:ProcessStep)
 (:Service)-[:HAS_LEGAL_BASIS]->(:LegalBasis)
 (:Service)-[:HAS_PROBLEM]->(:DependencyProblem)
+(:Service)-[:HAS_QA]->(:ServiceQA)
 (:DependencyProblem)-[:INVOLVES_SERVICE]->(:Service)
 (:DependencyProblem)-[:INVOLVES_DOCUMENT]->(:Document)

@@ -17,7 +17,6 @@ class IntakeAgent:
             conversation_memory=data.get("conversation_memory", ""),
             query=query,
         )
-        print("Prompt:", prompt)
         fallback = {
             "problem_type": "unknown",
             "detected_language": "unknown",

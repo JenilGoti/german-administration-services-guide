@@ -31,14 +31,15 @@ def scrape(url: str) -> Dict[str, Any]:
     return web_scraper_tool.scrape(url)
 
 
-@mcp.tool(description="Search German administration knowledge base using full user situation queries")
+@mcp.tool(description="Search German administration knowledge base using user situation queries, service vectors, and precomputed ServiceQA facts")
 def search_problem_knowledge(queries: List[str], top_k: int = 3) -> Dict[str, Any]:
     mcp_logger.info("SERVER tool=search_problem_knowledge queries=%s top_k=%s", queries, top_k)
     result = graph_tools.search_problem_knowledge(queries=queries, top_k=top_k)
     mcp_logger.info(
-        "SERVER tool=search_problem_knowledge result_counts sub_situations=%s services=%s service_details=%s",
+        "SERVER tool=search_problem_knowledge result_counts sub_situations=%s services=%s service_qa=%s service_details=%s",
         len(result.get("SubSituation", [])),
         len(result.get("Service", [])),
+        len(result.get("ServiceQA", [])),
         len(result.get("services", [])),
     )
     return result
